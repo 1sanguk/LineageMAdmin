@@ -1,0 +1,132 @@
+@model LineageMOps.Models.Domain.GameEvent
+@{
+    ViewData["Title"] = Model.Id == 0 ? "이벤트 추가" : "이벤트 수정";
+    string[] allServers = ViewBag.AllServers;
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="mb-3">
+            <a href="/Event" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>목록으로
+            </a>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-calendar-event me-2"></i>
+                @(Model.Id == 0 ? "신규 이벤트 추가" : "이벤트 수정")
+            </div>
+            <div class="card-body">
+                <form method="post" action="/Event/EditEvent">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Id" value="@Model.Id" />
+                    <input type="hidden" name="CreatedBy" value="@Model.CreatedBy" />
+                    <input type="hidden" name="CreatedAt" value="@Model.CreatedAt.ToString("o")" />
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">이벤트 제목 <span class="text-danger">*</span></label>
+                        <input type="text" name="Title" value="@Model.Title" class="form-control" required placeholder="이벤트 제목을 입력하세요" />
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">이벤트 유형</label>
+                            <select name="Type" class="form-select">
+                                @foreach (LineageMOps.Models.Domain.EventType t in Enum.GetValues(typeof(LineageMOps.Models.Domain.EventType)))
+                                {
+                                    var label = t switch
+                                    {
+                                        LineageMOps.Models.Domain.EventType.Exp => "경험치",
+                                        LineageMOps.Models.Domain.EventType.Drop => "드랍률",
+                                        LineageMOps.Models.Domain.EventType.Login => "로그인",
+                                        LineageMOps.Models.Domain.EventType.Special => "특별",
+                                        LineageMOps.Models.Domain.EventType.Holiday => "휴일",
+                                        _ => t.ToString()
+                                    };
+                                    <option value="@t" selected="@(Model.Type == t ? "selected" : null)">@label</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">상태</label>
+                            <select name="Status" class="form-select">
+                                @foreach (LineageMOps.Models.Domain.EventStatus s in Enum.GetValues(typeof(LineageMOps.Models.Domain.EventStatus)))
+                                {
+                                    var label = s switch
+                                    {
+                                        LineageMOps.Models.Domain.EventStatus.Active => "진행중",
+                                        LineageMOps.Models.Domain.EventStatus.Scheduled => "예정",
+                                        LineageMOps.Models.Domain.EventStatus.Ended => "종료",
+                                        LineageMOps.Models.Domain.EventStatus.Cancelled => "취소",
+                                        _ => s.ToString()
+                                    };
+                                    <option value="@s" selected="@(Model.Status == s ? "selected" : null)">@label</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">시작일 <span class="text-danger">*</span></label>
+                            <input type="date" name="StartDate" value="@Model.StartDate.ToString("yyyy-MM-dd")" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">종료일 <span class="text-danger">*</span></label>
+                            <input type="date" name="EndDate" value="@Model.EndDate.ToString("yyyy-MM-dd")" class="form-control" required />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">적용 서버</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="chkAllServers"
+                                       onchange="toggleAllServers(this)" />
+                                <label class="form-check-label fw-semibold" for="chkAllServers">전체 선택</label>
+                            </div>
+                            @foreach (var s in allServers)
+                            {
+                                <div class="form-check">
+                                    <input class="form-check-input server-check" type="checkbox"
+                                           name="selectedServers" value="@s" id="srv_@s"
+                                           @(Model.ApplicableServers.Contains(s) ? "checked" : "") />
+                                    <label class="form-check-label" for="srv_@s">@s</label>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">이벤트 설명</label>
+                        <textarea name="Description" class="form-control" rows="5" placeholder="이벤트 상세 내용을 입력하세요">@Model.Description</textarea>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-save me-1"></i>저장
+                        </button>
+                        <a href="/Event" class="btn btn-outline-secondary">취소</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function toggleAllServers(cb) {
+        document.querySelectorAll('.server-check').forEach(c => c.checked = cb.checked);
+    }
+    // Sync "all" checkbox state
+    function syncAll() {
+        var checks = document.querySelectorAll('.server-check');
+        var all = Array.from(checks).every(c => c.checked);
+        document.getElementById('chkAllServers').checked = all;
+    }
+    document.querySelectorAll('.server-check').forEach(c => c.addEventListener('change', syncAll));
+    syncAll();
+</script>
+}

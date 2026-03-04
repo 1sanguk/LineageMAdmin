@@ -1,0 +1,194 @@
+@model LineageMOps.Models.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "대시보드";
+}
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card text-white" style="background: linear-gradient(135deg, #1a6fc4, #0d4a8c);">
+            <div class="card-body">
+                <div class="stat-value">@Model.TotalOnlinePlayers.ToString("N0")</div>
+                <div class="stat-label"><i class="bi bi-people-fill me-1"></i> 전체 접속자 수</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card text-white" style="background: linear-gradient(135deg, #16a34a, #166534);">
+            <div class="card-body">
+                <div class="stat-value">@Model.TodayNewAccounts</div>
+                <div class="stat-label"><i class="bi bi-person-plus-fill me-1"></i> 오늘 신규 가입</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card text-white" style="background: linear-gradient(135deg, #dc2626, #991b1b);">
+            <div class="card-body">
+                <div class="stat-value">@Model.TodayNewSanctions</div>
+                <div class="stat-label"><i class="bi bi-shield-exclamation me-1"></i> 오늘 신규 제재</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card text-white" style="background: linear-gradient(135deg, #d97706, #92400e);">
+            <div class="card-body">
+                <div class="stat-value">@Model.ActiveEvents</div>
+                <div class="stat-label"><i class="bi bi-calendar-event-fill me-1"></i> 진행 중 이벤트</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Server Status Cards + Chart -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-server me-2"></i>서버 현황</span>
+                <small class="text-muted">실시간</small>
+            </div>
+            <div class="card-body p-3">
+                <div class="row g-2">
+                    @foreach (var server in Model.Servers)
+                    {
+                        var stateClass = server.State switch
+                        {
+                            LineageMOps.Models.Domain.ServerState.Online => "online",
+                            LineageMOps.Models.Domain.ServerState.Warning => "warning",
+                            LineageMOps.Models.Domain.ServerState.Maintenance => "maintenance",
+                            _ => "offline"
+                        };
+                        var stateBadge = server.State switch
+                        {
+                            LineageMOps.Models.Domain.ServerState.Online => "success",
+                            LineageMOps.Models.Domain.ServerState.Warning => "warning",
+                            LineageMOps.Models.Domain.ServerState.Maintenance => "secondary",
+                            _ => "danger"
+                        };
+                        var stateText = server.State switch
+                        {
+                            LineageMOps.Models.Domain.ServerState.Online => "정상",
+                            LineageMOps.Models.Domain.ServerState.Warning => "주의",
+                            LineageMOps.Models.Domain.ServerState.Maintenance => "점검",
+                            _ => "오프라인"
+                        };
+                        var fillPct = server.MaxPlayers > 0 ? (int)((double)server.CurrentPlayers / server.MaxPlayers * 100) : 0;
+                        var fillColor = fillPct >= 90 ? "danger" : fillPct >= 70 ? "warning" : "success";
+                        <div class="col-6">
+                            <div class="server-card card p-3">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <span class="status-dot @stateClass me-1"></span>
+                                        <strong style="font-size:0.9rem;">@server.DisplayName</strong>
+                                    </div>
+                                    <span class="badge bg-@stateBadge">@stateText</span>
+                                </div>
+                                <div class="d-flex justify-content-between text-muted" style="font-size:0.78rem;">
+                                    <span><i class="bi bi-people me-1"></i>@server.CurrentPlayers.ToString("N0") / @server.MaxPlayers.ToString("N0")</span>
+                                    <span>@fillPct%</span>
+                                </div>
+                                <div class="progress mt-1" style="height: 5px;">
+                                    <div class="progress-bar bg-@fillColor" style="width: @fillPct%"></div>
+                                </div>
+                                <div class="d-flex justify-content-between text-muted mt-2" style="font-size:0.72rem;">
+                                    <span>CPU @server.CpuUsage.ToString("0.0")%</span>
+                                    <span>MEM @server.MemoryUsage.ToString("0.0")%</span>
+                                    <span>가동률 @server.Uptime.ToString("0.00")%</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header"><i class="bi bi-bar-chart-fill me-2"></i>서버별 접속자</div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <canvas id="serverChart" style="max-height: 260px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Logs -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-journal-text me-2"></i>최근 로그</span>
+        <a href="/Monitoring" class="btn btn-sm btn-outline-secondary">전체 보기</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-3">시간</th>
+                        <th>서버</th>
+                        <th>유형</th>
+                        <th>메시지</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var log in Model.RecentLogs)
+                    {
+                        var levelClass = log.Level switch
+                        {
+                            LineageMOps.Models.Domain.LogLevel.Warning => "text-warning",
+                            LineageMOps.Models.Domain.LogLevel.Error => "text-danger",
+                            LineageMOps.Models.Domain.LogLevel.Critical => "text-purple fw-bold",
+                            _ => "text-muted"
+                        };
+                        var typeBadge = log.Type switch
+                        {
+                            LineageMOps.Models.Domain.LogType.Login => "primary",
+                            LineageMOps.Models.Domain.LogType.Logout => "secondary",
+                            LineageMOps.Models.Domain.LogType.Chat => "info",
+                            LineageMOps.Models.Domain.LogType.Trade => "success",
+                            LineageMOps.Models.Domain.LogType.System => "light",
+                            LineageMOps.Models.Domain.LogType.Audit => "warning",
+                            LineageMOps.Models.Domain.LogType.Error => "danger",
+                            _ => "secondary"
+                        };
+                        <tr>
+                            <td class="ps-3 text-muted" style="font-size:0.8rem;white-space:nowrap;">
+                                @log.Timestamp.ToString("HH:mm:ss")
+                            </td>
+                            <td><span class="badge bg-dark">@log.Server</span></td>
+                            <td><span class="badge bg-@typeBadge">@log.Type</span></td>
+                            <td class="@levelClass" style="font-size:0.85rem;">@log.Message</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const ctx = document.getElementById('serverChart');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [@Html.Raw(string.Join(",", Model.Servers.Select(s => $"'{s.DisplayName}'")))],
+            datasets: [{
+                label: '접속자',
+                data: [@string.Join(",", Model.Servers.Select(s => s.CurrentPlayers))],
+                backgroundColor: [
+                    '#22c55e','#3b82f6','#f59e0b','#8b5cf6','#6b7280','#14b8a6','#f97316'
+                ],
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#f0f2f5' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+</script>
+}

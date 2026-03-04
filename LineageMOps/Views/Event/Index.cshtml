@@ -1,0 +1,189 @@
+@{
+    ViewData["Title"] = "이벤트/공지 관리";
+    string tab = ViewBag.Tab ?? "events";
+    var events = ViewBag.Events as List<LineageMOps.Models.Domain.GameEvent> ?? new();
+    var notices = ViewBag.Notices as List<LineageMOps.Models.Domain.Notice> ?? new();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0 fw-bold">이벤트 / 공지 관리</h5>
+    <div class="d-flex gap-2">
+        <a href="/Event/EditEvent" class="btn btn-primary btn-sm @(tab == "events" ? "" : "d-none")" id="btnAddEvent">
+            <i class="bi bi-plus-circle me-1"></i>이벤트 추가
+        </a>
+        <a href="/Event/EditNotice" class="btn btn-success btn-sm @(tab == "notices" ? "" : "d-none")" id="btnAddNotice">
+            <i class="bi bi-plus-circle me-1"></i>공지 작성
+        </a>
+    </div>
+</div>
+
+<ul class="nav nav-tabs mb-3" id="eventTab">
+    <li class="nav-item">
+        <a class="nav-link @(tab == "events" ? "active" : "")" href="?tab=events">
+            <i class="bi bi-calendar-event me-1"></i>이벤트 (@events.Count)
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(tab == "notices" ? "active" : "")" href="?tab=notices">
+            <i class="bi bi-megaphone me-1"></i>공지 (@notices.Count)
+        </a>
+    </li>
+</ul>
+
+@if (tab == "events")
+{
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-3">제목</th>
+                            <th>유형</th>
+                            <th>상태</th>
+                            <th>시작일</th>
+                            <th>종료일</th>
+                            <th>적용 서버</th>
+                            <th>등록자</th>
+                            <th class="text-center">관리</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var evt in events)
+                        {
+                            var (statusBadge, statusText) = evt.Status switch
+                            {
+                                LineageMOps.Models.Domain.EventStatus.Active => ("success", "진행중"),
+                                LineageMOps.Models.Domain.EventStatus.Scheduled => ("primary", "예정"),
+                                LineageMOps.Models.Domain.EventStatus.Ended => ("secondary", "종료"),
+                                LineageMOps.Models.Domain.EventStatus.Cancelled => ("danger", "취소"),
+                                _ => ("secondary", evt.Status.ToString())
+                            };
+                            var typeBadge = evt.Type switch
+                            {
+                                LineageMOps.Models.Domain.EventType.Exp => "warning",
+                                LineageMOps.Models.Domain.EventType.Drop => "info",
+                                LineageMOps.Models.Domain.EventType.Login => "success",
+                                LineageMOps.Models.Domain.EventType.Special => "danger",
+                                LineageMOps.Models.Domain.EventType.Holiday => "purple",
+                                _ => "secondary"
+                            };
+                            var typeText = evt.Type switch
+                            {
+                                LineageMOps.Models.Domain.EventType.Exp => "경험치",
+                                LineageMOps.Models.Domain.EventType.Drop => "드랍",
+                                LineageMOps.Models.Domain.EventType.Login => "로그인",
+                                LineageMOps.Models.Domain.EventType.Special => "특별",
+                                LineageMOps.Models.Domain.EventType.Holiday => "휴일",
+                                _ => evt.Type.ToString()
+                            };
+                            <tr>
+                                <td class="ps-3 fw-semibold">@evt.Title</td>
+                                <td><span class="badge bg-@typeBadge">@typeText</span></td>
+                                <td><span class="badge bg-@statusBadge">@statusText</span></td>
+                                <td class="text-muted" style="font-size:0.82rem;">@evt.StartDate.ToString("yyyy-MM-dd")</td>
+                                <td class="text-muted" style="font-size:0.82rem;">@evt.EndDate.ToString("yyyy-MM-dd")</td>
+                                <td style="font-size:0.78rem;">
+                                    @if (evt.ApplicableServers.Count >= 7)
+                                    {
+                                        <span class="badge bg-dark">전 서버</span>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var s in evt.ApplicableServers.Take(3))
+                                        {
+                                            <span class="badge bg-secondary me-1">@s</span>
+                                        }
+                                        @if (evt.ApplicableServers.Count > 3)
+                                        {
+                                            <span class="text-muted">+@(evt.ApplicableServers.Count - 3)</span>
+                                        }
+                                    }
+                                </td>
+                                <td class="text-muted" style="font-size:0.82rem;">@evt.CreatedBy</td>
+                                <td class="text-center">
+                                    <a href="/Event/EditEvent/@evt.Id" class="btn btn-xs btn-outline-primary me-1" style="font-size:0.75rem;padding:2px 6px;">수정</a>
+                                    <form method="post" action="/Event/DeleteEvent" style="display:inline;" onsubmit="return confirm('삭제하시겠습니까?')">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@evt.Id" />
+                                        <button type="submit" class="btn btn-xs btn-outline-danger" style="font-size:0.75rem;padding:2px 6px;">삭제</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th class="ps-3">제목</th>
+                            <th>유형</th>
+                            <th>발행일</th>
+                            <th>만료일</th>
+                            <th>상태</th>
+                            <th>적용 서버</th>
+                            <th class="text-center">관리</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var n in notices)
+                        {
+                            var (typeBadge, typeText) = n.Type switch
+                            {
+                                LineageMOps.Models.Domain.NoticeType.General => ("secondary", "일반"),
+                                LineageMOps.Models.Domain.NoticeType.Maintenance => ("warning", "점검"),
+                                LineageMOps.Models.Domain.NoticeType.Update => ("primary", "업데이트"),
+                                LineageMOps.Models.Domain.NoticeType.Event => ("success", "이벤트"),
+                                LineageMOps.Models.Domain.NoticeType.Urgent => ("danger", "긴급"),
+                                _ => ("secondary", n.Type.ToString())
+                            };
+                            <tr>
+                                <td class="ps-3 fw-semibold">@n.Title</td>
+                                <td><span class="badge bg-@typeBadge">@typeText</span></td>
+                                <td class="text-muted" style="font-size:0.82rem;">@n.PublishDate.ToString("yyyy-MM-dd")</td>
+                                <td class="text-muted" style="font-size:0.82rem;">@(n.ExpireDate.HasValue ? n.ExpireDate.Value.ToString("yyyy-MM-dd") : "-")</td>
+                                <td>
+                                    @if (n.IsPublished) { <span class="badge bg-success">발행됨</span> }
+                                    else { <span class="badge bg-secondary">미발행</span> }
+                                </td>
+                                <td style="font-size:0.78rem;">
+                                    @if (n.ApplicableServers.Count >= 7) { <span class="badge bg-dark">전 서버</span> }
+                                    else { @string.Join(", ", n.ApplicableServers.Take(3)) }
+                                </td>
+                                <td class="text-center">
+                                    <a href="/Event/EditNotice/@n.Id" class="btn btn-xs btn-outline-primary me-1" style="font-size:0.75rem;padding:2px 6px;">수정</a>
+                                    <form method="post" action="/Event/DeleteNotice" style="display:inline;" onsubmit="return confirm('삭제하시겠습니까?')">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@n.Id" />
+                                        <button type="submit" class="btn btn-xs btn-outline-danger" style="font-size:0.75rem;padding:2px 6px;">삭제</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+<script>
+    document.querySelectorAll('#eventTab .nav-link').forEach(link => {
+        link.addEventListener('click', function () {
+            var isEvents = this.href.includes('tab=events');
+            document.getElementById('btnAddEvent').classList.toggle('d-none', !isEvents);
+            document.getElementById('btnAddNotice').classList.toggle('d-none', isEvents);
+        });
+    });
+</script>
+}

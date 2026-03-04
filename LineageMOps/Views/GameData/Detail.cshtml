@@ -1,0 +1,175 @@
+@model LineageMOps.Models.Domain.Character
+@{
+    ViewData["Title"] = $"캐릭터 상세 - {Model.Name}";
+    var account = ViewBag.Account as LineageMOps.Models.Domain.Account;
+    var className = Model.Class switch
+    {
+        LineageMOps.Models.Domain.CharacterClass.Knight => "군주",
+        LineageMOps.Models.Domain.CharacterClass.DarkKnight => "기사",
+        LineageMOps.Models.Domain.CharacterClass.Elf => "요정",
+        LineageMOps.Models.Domain.CharacterClass.Wizard => "마법사",
+        LineageMOps.Models.Domain.CharacterClass.DarkElf => "다크엘프",
+        LineageMOps.Models.Domain.CharacterClass.Dragonknight => "드래곤나이트",
+        LineageMOps.Models.Domain.CharacterClass.Illusionist => "환술사",
+        _ => Model.Class.ToString()
+    };
+    var expPct = Model.MaxExperience > 0 ? (int)((double)Model.Experience / Model.MaxExperience * 100) : 0;
+}
+
+<div class="mb-3">
+    <a href="/GameData" class="btn btn-sm btn-outline-secondary me-2">
+        <i class="bi bi-arrow-left me-1"></i>목록
+    </a>
+    @if (account != null)
+    {
+        <a href="/User/Detail/@account.Id" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-person me-1"></i>계정: @account.UserId
+        </a>
+    }
+</div>
+
+<div class="row g-3">
+    <!-- Character Overview -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-person-badge me-2"></i>캐릭터 정보</div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#1a6fc4,#0d4a8c);display:inline-flex;align-items:center;justify-content:center;">
+                        <i class="bi bi-joystick text-white" style="font-size:2rem;"></i>
+                    </div>
+                    <h5 class="mt-2 mb-0 fw-bold">@Model.Name</h5>
+                    <div>
+                        <span class="badge bg-secondary">@className</span>
+                        <span class="badge bg-dark ms-1">@Model.Server</span>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between">
+                        <small class="fw-semibold">레벨 @Model.Level</small>
+                        <small class="text-muted">@expPct%</small>
+                    </div>
+                    <div class="progress" style="height:8px;">
+                        <div class="progress-bar bg-primary" style="width:@expPct%;"></div>
+                    </div>
+                    <small class="text-muted">@Model.Experience.ToString("N0") / @Model.MaxExperience.ToString("N0") EXP</small>
+                </div>
+                <hr />
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        <tr><th class="text-muted" style="font-size:0.82rem;">혈맹</th><td>@(string.IsNullOrEmpty(Model.ClanName) ? "-" : Model.ClanName)</td></tr>
+                        <tr><th class="text-muted" style="font-size:0.82rem;">아데나</th><td class="fw-semibold">@Model.Adena.ToString("N0")</td></tr>
+                        <tr>
+                            <th class="text-muted" style="font-size:0.82rem;">HP</th>
+                            <td>
+                                <div class="d-flex align-items-center gap-1">
+                                    <div class="progress flex-grow-1" style="height:5px;">
+                                        <div class="progress-bar bg-danger" style="width:@(Model.Stats.MaxHp > 0 ? (int)((double)Model.Stats.Hp/Model.Stats.MaxHp*100) : 0)%"></div>
+                                    </div>
+                                    <small>@Model.Stats.Hp/@Model.Stats.MaxHp</small>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="text-muted" style="font-size:0.82rem;">MP</th>
+                            <td>
+                                <div class="d-flex align-items-center gap-1">
+                                    <div class="progress flex-grow-1" style="height:5px;">
+                                        <div class="progress-bar bg-info" style="width:@(Model.Stats.MaxMp > 0 ? (int)((double)Model.Stats.Mp/Model.Stats.MaxMp*100) : 0)%"></div>
+                                    </div>
+                                    <small>@Model.Stats.Mp/@Model.Stats.MaxMp</small>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr><th class="text-muted" style="font-size:0.82rem;">생성일</th><td class="text-muted" style="font-size:0.82rem;">@Model.CreatedAt.ToString("yyyy-MM-dd")</td></tr>
+                        <tr><th class="text-muted" style="font-size:0.82rem;">마지막 플레이</th><td class="text-muted" style="font-size:0.82rem;">@Model.LastPlayedAt.ToString("yyyy-MM-dd HH:mm")</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-bar-chart me-2"></i>능력치</div>
+            <div class="card-body">
+                @{
+                    var stats = new[] {
+                        ("STR 힘", Model.Stats.Str, 25),
+                        ("DEX 민첩", Model.Stats.Dex, 25),
+                        ("CON 체력", Model.Stats.Con, 25),
+                        ("WIS 지혜", Model.Stats.Wis, 25),
+                        ("INT 지능", Model.Stats.Int, 25),
+                        ("CHA 매력", Model.Stats.Cha, 25)
+                    };
+                }
+                @foreach (var (label, val, max) in stats)
+                {
+                    var pct = (int)((double)val / max * 100);
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between">
+                            <small class="fw-semibold">@label</small>
+                            <small class="text-muted">@val</small>
+                        </div>
+                        <div class="progress" style="height:6px;">
+                            <div class="progress-bar bg-primary" style="width:@pct%"></div>
+                        </div>
+                    </div>
+                }
+                <hr />
+                <div class="d-flex justify-content-between">
+                    <small class="text-muted">방어도 (AC)</small>
+                    <small class="fw-bold">@Model.Stats.Ac</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inventory -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header"><i class="bi bi-bag-fill me-2"></i>인벤토리 (@Model.Inventory.Count 아이템)</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-3">아이템</th>
+                                <th>등급</th>
+                                <th>수량</th>
+                                <th>강화</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Inventory)
+                            {
+                                var (gradeBadge, gradeText) = item.Grade switch
+                                {
+                                    LineageMOps.Models.Domain.ItemGrade.Normal => ("secondary", "일반"),
+                                    LineageMOps.Models.Domain.ItemGrade.Magic => ("info", "마법"),
+                                    LineageMOps.Models.Domain.ItemGrade.Rare => ("primary", "레어"),
+                                    LineageMOps.Models.Domain.ItemGrade.Epic => ("warning", "에픽"),
+                                    LineageMOps.Models.Domain.ItemGrade.Legendary => ("danger", "전설"),
+                                    _ => ("secondary", item.Grade.ToString())
+                                };
+                                <tr class="@(item.IsEquipped ? "table-active" : "")">
+                                    <td class="ps-3" style="font-size:0.82rem;">
+                                        @if (item.IsEquipped) { <i class="bi bi-check-circle-fill text-success me-1" title="장착 중"></i> }
+                                        @item.ItemName
+                                    </td>
+                                    <td><span class="badge bg-@gradeBadge" style="font-size:0.68rem;">@gradeText</span></td>
+                                    <td class="text-muted" style="font-size:0.82rem;">@item.Quantity</td>
+                                    <td style="font-size:0.82rem;">
+                                        @if (item.Enchant > 0) { <span class="text-warning fw-bold">+@item.Enchant</span> }
+                                        else { <span class="text-muted">-</span> }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

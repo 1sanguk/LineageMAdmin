@@ -1,0 +1,119 @@
+@model LineageMOps.Models.Domain.Notice
+@{
+    ViewData["Title"] = Model.Id == 0 ? "공지 작성" : "공지 수정";
+    string[] allServers = ViewBag.AllServers;
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="mb-3">
+            <a href="/Event?tab=notices" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>목록으로
+            </a>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-megaphone me-2"></i>
+                @(Model.Id == 0 ? "신규 공지 작성" : "공지 수정")
+            </div>
+            <div class="card-body">
+                <form method="post" action="/Event/EditNotice">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Id" value="@Model.Id" />
+                    <input type="hidden" name="CreatedBy" value="@Model.CreatedBy" />
+                    <input type="hidden" name="CreatedAt" value="@Model.CreatedAt.ToString("o")" />
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">공지 제목 <span class="text-danger">*</span></label>
+                        <input type="text" name="Title" value="@Model.Title" class="form-control" required placeholder="공지 제목을 입력하세요" />
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">공지 유형</label>
+                            <select name="Type" class="form-select">
+                                @foreach (LineageMOps.Models.Domain.NoticeType t in Enum.GetValues(typeof(LineageMOps.Models.Domain.NoticeType)))
+                                {
+                                    var label = t switch
+                                    {
+                                        LineageMOps.Models.Domain.NoticeType.General => "일반",
+                                        LineageMOps.Models.Domain.NoticeType.Maintenance => "점검",
+                                        LineageMOps.Models.Domain.NoticeType.Update => "업데이트",
+                                        LineageMOps.Models.Domain.NoticeType.Event => "이벤트",
+                                        LineageMOps.Models.Domain.NoticeType.Urgent => "긴급",
+                                        _ => t.ToString()
+                                    };
+                                    <option value="@t" selected="@(Model.Type == t ? "selected" : null)">@label</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">발행일</label>
+                            <input type="date" name="PublishDate" value="@Model.PublishDate.ToString("yyyy-MM-dd")" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">만료일</label>
+                            <input type="date" name="ExpireDate" value="@(Model.ExpireDate?.ToString("yyyy-MM-dd") ?? "")" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">공개 여부</label>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="IsPublished" value="true" id="chkPublish"
+                                   @(Model.IsPublished ? "checked" : "") />
+                            <label class="form-check-label" for="chkPublish">발행됨 (즉시 공개)</label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">적용 서버</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="chkAllServers2" onchange="toggleAllServers2(this)" />
+                                <label class="form-check-label fw-semibold" for="chkAllServers2">전체 선택</label>
+                            </div>
+                            @foreach (var s in allServers)
+                            {
+                                <div class="form-check">
+                                    <input class="form-check-input server-check2" type="checkbox"
+                                           name="selectedServers" value="@s" id="srv2_@s"
+                                           @(Model.ApplicableServers.Contains(s) ? "checked" : "") />
+                                    <label class="form-check-label" for="srv2_@s">@s</label>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">공지 내용 <span class="text-danger">*</span></label>
+                        <textarea name="Content" class="form-control" rows="8" required
+                                  placeholder="공지 내용을 입력하세요">@Model.Content</textarea>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success px-4">
+                            <i class="bi bi-save me-1"></i>저장
+                        </button>
+                        <a href="/Event?tab=notices" class="btn btn-outline-secondary">취소</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function toggleAllServers2(cb) {
+        document.querySelectorAll('.server-check2').forEach(c => c.checked = cb.checked);
+    }
+    function syncAll2() {
+        var checks = document.querySelectorAll('.server-check2');
+        document.getElementById('chkAllServers2').checked = Array.from(checks).every(c => c.checked);
+    }
+    document.querySelectorAll('.server-check2').forEach(c => c.addEventListener('change', syncAll2));
+    syncAll2();
+</script>
+}
