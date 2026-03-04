@@ -4,16 +4,51 @@
     var account = ViewBag.Account as LineageMOps.Models.Domain.Account;
     var className = Model.Class switch
     {
-        LineageMOps.Models.Domain.CharacterClass.Knight => "군주",
-        LineageMOps.Models.Domain.CharacterClass.DarkKnight => "기사",
-        LineageMOps.Models.Domain.CharacterClass.Elf => "요정",
-        LineageMOps.Models.Domain.CharacterClass.Wizard => "마법사",
-        LineageMOps.Models.Domain.CharacterClass.DarkElf => "다크엘프",
+        LineageMOps.Models.Domain.CharacterClass.Knight      => "군주",
+        LineageMOps.Models.Domain.CharacterClass.DarkKnight  => "기사",
+        LineageMOps.Models.Domain.CharacterClass.Elf         => "요정",
+        LineageMOps.Models.Domain.CharacterClass.Wizard      => "마법사",
+        LineageMOps.Models.Domain.CharacterClass.DarkElf     => "다크엘프",
         LineageMOps.Models.Domain.CharacterClass.Dragonknight => "드래곤나이트",
         LineageMOps.Models.Domain.CharacterClass.Illusionist => "환술사",
         _ => Model.Class.ToString()
     };
+    var classColor = Model.Class switch
+    {
+        LineageMOps.Models.Domain.CharacterClass.Knight      => "#c8a951",
+        LineageMOps.Models.Domain.CharacterClass.DarkKnight  => "#6366f1",
+        LineageMOps.Models.Domain.CharacterClass.Elf         => "#22c55e",
+        LineageMOps.Models.Domain.CharacterClass.Wizard      => "#3b82f6",
+        LineageMOps.Models.Domain.CharacterClass.DarkElf     => "#a855f7",
+        LineageMOps.Models.Domain.CharacterClass.Dragonknight => "#ef4444",
+        LineageMOps.Models.Domain.CharacterClass.Illusionist => "#ec4899",
+        _ => "#6c8096"
+    };
     var expPct = Model.MaxExperience > 0 ? (int)((double)Model.Experience / Model.MaxExperience * 100) : 0;
+
+    // 기본 스탯
+    int str = Model.Stats.Str, dex = Model.Stats.Dex, con = Model.Stats.Con;
+    int wis = Model.Stats.Wis, intStat = Model.Stats.Int, cha = Model.Stats.Cha;
+    int lfe = Model.Stats.Lfe, dth = Model.Stats.Dth;
+
+    // 전투 능력치 계산 (리니지M 스탯 시스템 기반)
+    int meleeDmg     = (int)(str * 0.5);
+    int meleeHit     = str;
+    double meleeCrit = str * 0.1;
+    int rangedDmg    = dex / 4;
+    int rangedHit    = dex;
+    double rangedCrit = dex * 0.1;
+    int physDef      = dex / 4;   // AC 기여
+    int rangedEvade  = dex / 5;   // ER
+    int magicDmg     = intStat / 4;
+    int magicHit     = intStat / 4;
+    double magicCrit = intStat * 0.1;
+    int magicBonus   = intStat / 5;
+    int mpCostRed    = intStat / 2;
+    int magicDef     = wis * 2;   // MR
+    int mpRecovery   = wis / 4;
+    int hpBonus      = con * 20;
+    int weightCap    = con * 300;
 }
 
 <div class="mb-3">
@@ -29,147 +64,547 @@
 </div>
 
 <div class="row g-3">
-    <!-- Character Overview -->
-    <div class="col-md-4">
-        <div class="card">
+
+    <!-- ① 캐릭터 정보 -->
+    <div class="col-md-3">
+        <div class="card h-100">
             <div class="card-header"><i class="bi bi-person-badge me-2"></i>캐릭터 정보</div>
             <div class="card-body">
                 <div class="text-center mb-3">
-                    <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#1a6fc4,#0d4a8c);display:inline-flex;align-items:center;justify-content:center;">
-                        <i class="bi bi-joystick text-white" style="font-size:2rem;"></i>
+                    <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,@classColor,#0d1117);display:inline-flex;align-items:center;justify-content:center;border:2px solid @classColor;">
+                        <i class="bi bi-joystick text-white" style="font-size:1.8rem;"></i>
                     </div>
-                    <h5 class="mt-2 mb-0 fw-bold">@Model.Name</h5>
+                    <h5 class="mt-2 mb-1 fw-bold">@Model.Name</h5>
                     <div>
-                        <span class="badge bg-secondary">@className</span>
+                        <span class="badge" style="background:@classColor;">@className</span>
                         <span class="badge bg-dark ms-1">@Model.Server</span>
                     </div>
                 </div>
-                <div class="mb-2">
-                    <div class="d-flex justify-content-between">
-                        <small class="fw-semibold">레벨 @Model.Level</small>
-                        <small class="text-muted">@expPct%</small>
+
+                <!-- 레벨 / 경험치 보기 -->
+                <div class="mb-3" id="levelView">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="fw-semibold">Lv. @Model.Level</small>
+                        <div class="d-flex align-items-center gap-2">
+                            <small class="text-muted">@expPct%</small>
+                            <button class="btn btn-link p-0" onclick="toggleLevelEdit()" title="수정" style="font-size:0.72rem;color:#9aabbc;line-height:1;">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div class="progress" style="height:8px;">
-                        <div class="progress-bar bg-primary" style="width:@expPct%;"></div>
+                    <div class="progress" style="height:6px;">
+                        <div class="progress-bar" style="width:@expPct%;background:@classColor;"></div>
                     </div>
-                    <small class="text-muted">@Model.Experience.ToString("N0") / @Model.MaxExperience.ToString("N0") EXP</small>
+                    <small class="text-muted" style="font-size:0.72rem;">@Model.Experience.ToString("N0") / @Model.MaxExperience.ToString("N0") EXP</small>
                 </div>
+
+                <!-- 레벨 / 경험치 편집 -->
+                <div class="mb-3" id="levelEdit" style="display:none;">
+                    <form method="post" action="/GameData/UpdateLevelExp/@Model.Id">
+                        <div class="row g-2">
+                            <div class="col-5">
+                                <label class="form-label mb-1" style="font-size:0.72rem;color:#9aabbc;">레벨 (1~90)</label>
+                                <input type="number" name="level" id="levelInput" class="form-control form-control-sm"
+                                       value="@Model.Level" min="1" max="90" onchange="autoFillExp(this.value)" style="font-size:0.82rem;" />
+                            </div>
+                            <div class="col-7">
+                                <label class="form-label mb-1" style="font-size:0.72rem;color:#9aabbc;">경험치</label>
+                                <input type="number" name="experience" id="expInput" class="form-control form-control-sm"
+                                       value="@Model.Experience" min="0" style="font-size:0.82rem;" />
+                            </div>
+                            <div class="col-12">
+                                <div id="expRangeHint" class="text-muted" style="font-size:0.68rem;"></div>
+                            </div>
+                            <div class="col-12 d-flex gap-1">
+                                <button type="submit" class="btn btn-sm btn-primary flex-grow-1" style="font-size:0.78rem;">저장</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:0.78rem;" onclick="toggleLevelEdit()">취소</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
                 <hr />
-                <table class="table table-sm mb-0">
+                <table class="table table-sm mb-2">
                     <tbody>
-                        <tr><th class="text-muted" style="font-size:0.82rem;">혈맹</th><td>@(string.IsNullOrEmpty(Model.ClanName) ? "-" : Model.ClanName)</td></tr>
-                        <tr><th class="text-muted" style="font-size:0.82rem;">아데나</th><td class="fw-semibold">@Model.Adena.ToString("N0")</td></tr>
                         <tr>
-                            <th class="text-muted" style="font-size:0.82rem;">HP</th>
-                            <td>
-                                <div class="d-flex align-items-center gap-1">
-                                    <div class="progress flex-grow-1" style="height:5px;">
-                                        <div class="progress-bar bg-danger" style="width:@(Model.Stats.MaxHp > 0 ? (int)((double)Model.Stats.Hp/Model.Stats.MaxHp*100) : 0)%"></div>
-                                    </div>
-                                    <small>@Model.Stats.Hp/@Model.Stats.MaxHp</small>
-                                </div>
-                            </td>
+                            <th class="text-muted" style="font-size:0.78rem;width:70px;">혈맹</th>
+                            <td style="font-size:0.82rem;">@(string.IsNullOrEmpty(Model.ClanName) ? "-" : Model.ClanName)</td>
                         </tr>
                         <tr>
-                            <th class="text-muted" style="font-size:0.82rem;">MP</th>
-                            <td>
-                                <div class="d-flex align-items-center gap-1">
-                                    <div class="progress flex-grow-1" style="height:5px;">
-                                        <div class="progress-bar bg-info" style="width:@(Model.Stats.MaxMp > 0 ? (int)((double)Model.Stats.Mp/Model.Stats.MaxMp*100) : 0)%"></div>
-                                    </div>
-                                    <small>@Model.Stats.Mp/@Model.Stats.MaxMp</small>
-                                </div>
-                            </td>
+                            <th class="text-muted" style="font-size:0.78rem;">생성일</th>
+                            <td class="text-muted" style="font-size:0.78rem;">@Model.CreatedAt.ToString("yyyy-MM-dd")</td>
                         </tr>
-                        <tr><th class="text-muted" style="font-size:0.82rem;">생성일</th><td class="text-muted" style="font-size:0.82rem;">@Model.CreatedAt.ToString("yyyy-MM-dd")</td></tr>
-                        <tr><th class="text-muted" style="font-size:0.82rem;">마지막 플레이</th><td class="text-muted" style="font-size:0.82rem;">@Model.LastPlayedAt.ToString("yyyy-MM-dd HH:mm")</td></tr>
+                        <tr>
+                            <th class="text-muted" style="font-size:0.78rem;">최근 플레이</th>
+                            <td class="text-muted" style="font-size:0.78rem;">@Model.LastPlayedAt.ToString("MM-dd HH:mm")</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- 재화 -->
+                <div id="currencyView">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small style="font-size:0.72rem;font-weight:700;color:#6c8096;letter-spacing:1px;">재화</small>
+                        <button class="btn btn-outline-secondary" style="font-size:0.68rem;padding:1px 7px;" onclick="toggleCurrencyEdit()">편집</button>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-1">
+                        <span class="text-muted" style="font-size:0.78rem;">💰 아데나</span>
+                        <span class="fw-semibold" style="font-size:0.82rem;">@Model.Adena.ToString("N0")</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-1">
+                        <span class="text-muted" style="font-size:0.78rem;">💎 다이아</span>
+                        <span class="fw-semibold" style="font-size:0.82rem;color:#38bdf8;">@Model.Diamond.ToString("N0")</span>
+                    </div>
+                </div>
+
+                <div id="currencyEdit" style="display:none;">
+                    <form method="post" action="/GameData/UpdateCurrency/@Model.Id">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small style="font-size:0.72rem;font-weight:700;color:#6c8096;letter-spacing:1px;">재화 수정</small>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label mb-1" style="font-size:0.75rem;">💰 아데나</label>
+                            <input type="number" class="form-control form-control-sm" name="adena" value="@Model.Adena" min="0" />
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label mb-1" style="font-size:0.75rem;">💎 다이아</label>
+                            <input type="number" class="form-control form-control-sm" name="diamond" value="@Model.Diamond" min="0" />
+                        </div>
+                        <div class="d-flex gap-1">
+                            <button type="submit" class="btn btn-sm btn-primary flex-grow-1" style="font-size:0.78rem;">저장</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1" style="font-size:0.78rem;" onclick="toggleCurrencyEdit()">취소</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ② 능력치 -->
+    <div class="col-md-5">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-bar-chart-fill me-2"></i>능력치</span>
+                <button class="btn btn-sm btn-outline-primary" id="btnEditStats" onclick="toggleStatsEdit()">
+                    <i class="bi bi-pencil me-1"></i>편집
+                </button>
+            </div>
+            <div class="card-body" style="overflow-y:auto;">
+
+                <!-- 보기 모드 -->
+                <div id="statsView">
+
+                    <!-- 기본 스탯 -->
+                    <div class="mb-2" style="font-size:0.68rem;font-weight:700;color:#6c8096;letter-spacing:1.2px;text-transform:uppercase;">기본 스탯</div>
+                    @{
+                        var isKnight = Model.Class == LineageMOps.Models.Domain.CharacterClass.Knight;
+                        var baseStats = new[]
+                        {
+                            ("STR", "힘",   str,     "근거리 대미지 · 근거리 명중 · 근거리 치명타",                                         "#ef4444", 50),
+                            ("DEX", "민첩", dex,     "원거리 대미지 · 원거리 명중 · 원거리 치명타 · 물리 방어력(AC) · 원거리 회피력(ER)",     "#f59e0b", 50),
+                            ("CON", "체력", con,     "MAX HP · HP 회복(틱) · 물약 회복량/회복률 · 물약 쿨타임 감소 · 최대 소지 무게",          "#22c55e", 50),
+                            ("INT", "지능", intStat, "마법 대미지 · 마법 명중 · 마법 치명타 · 마법 보너스 · MP 소모 감소",                     "#3b82f6", 50),
+                            ("WIS", "지혜", wis,     "MAX MP · MP 회복(틱) · 물약 MP 회복량 · 마법 방어력(MR)",                              "#8b5cf6", 50),
+                            ("CHA", "매력", cha,     isKnight ? "혈맹원 모집 수 (군주 전용)" : "군주 클래스 전용 스탯",                        "#ec4899", 50),
+                            ("LFE", "생명", lfe,     "경험치/아이템 손실 방어 · 장비 파괴 방어 · 복구 비용 감소",                             "#22c55e", 10),
+                            ("DTH", "죽음", dth,     "대상 경험치/아이템 추가 손실 · 대상 장비 파괴 · 복구 비용 증가",                         "#ef4444", 10),
+                        };
+                    }
+                    @foreach (var (abbr, name, val, effect, color, maxVal) in baseStats)
+                    {
+                        var pct = Math.Min((int)((double)val / maxVal * 100), 100);
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between align-items-baseline">
+                                <div>
+                                    <span class="fw-bold me-1" style="font-size:0.85rem;color:@color;">@abbr</span>
+                                    <span class="text-muted" style="font-size:0.75rem;">@name</span>
+                                </div>
+                                <span class="fw-bold" style="font-size:0.88rem;">@val</span>
+                            </div>
+                            <div class="progress my-1" style="height:4px;">
+                                <div class="progress-bar" style="width:@pct%;background:@color;"></div>
+                            </div>
+                            <div style="font-size:0.67rem;color:#9aabbc;">@effect</div>
+                        </div>
+                    }
+
+                    <hr class="my-3" />
+
+                    <!-- HP / MP -->
+                    <div class="mb-2" style="font-size:0.68rem;font-weight:700;color:#6c8096;letter-spacing:1.2px;text-transform:uppercase;">HP / MP</div>
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between mb-1">
+                            <small class="fw-semibold text-danger">HP</small>
+                            <small>@Model.Stats.Hp.ToString("N0") / @Model.Stats.MaxHp.ToString("N0")</small>
+                        </div>
+                        <div class="progress" style="height:6px;">
+                            <div class="progress-bar bg-danger" style="width:@(Model.Stats.MaxHp > 0 ? (int)((double)Model.Stats.Hp / Model.Stats.MaxHp * 100) : 0)%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <small class="fw-semibold" style="color:#8b5cf6;">MP</small>
+                            <small>@Model.Stats.Mp.ToString("N0") / @Model.Stats.MaxMp.ToString("N0")</small>
+                        </div>
+                        <div class="progress" style="height:6px;">
+                            <div class="progress-bar" style="width:@(Model.Stats.MaxMp > 0 ? (int)((double)Model.Stats.Mp / Model.Stats.MaxMp * 100) : 0)%;background:#8b5cf6;"></div>
+                        </div>
+                    </div>
+
+                    <!-- AC -->
+                    <div class="mb-2" style="font-size:0.68rem;font-weight:700;color:#6c8096;letter-spacing:1.2px;text-transform:uppercase;">방어도</div>
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <span class="fw-bold @(Model.Stats.Ac < 0 ? "text-success" : "")" style="font-size:1.3rem;">@Model.Stats.Ac</span>
+                        <span class="text-muted" style="font-size:0.75rem;">AC — 값이 낮을수록(음수) 방어력 높음</span>
+                    </div>
+
+                    <!-- 전투 능력치 (파생) -->
+                    <div class="mb-2" style="font-size:0.68rem;font-weight:700;color:#6c8096;letter-spacing:1.2px;text-transform:uppercase;">
+                        전투 능력치 <span style="font-weight:400;color:#9aabbc;">(파생)</span>
+                    </div>
+                    <div class="row g-0">
+                        <div class="col-6 pe-2">
+                            <div class="mb-1" style="font-size:0.68rem;color:#ef4444;font-weight:600;">⚔ 근접 (STR)</div>
+                            <div class="d-flex justify-content-between" style="font-size:0.78rem;"><span class="text-muted">근거리 대미지</span><span class="fw-semibold">+@meleeDmg</span></div>
+                            <div class="d-flex justify-content-between" style="font-size:0.78rem;"><span class="text-muted">근거리 명중</span><span class="fw-semibold">+@meleeHit</span></div>
+                            <div class="d-flex justify-content-between" style="font-size:0.78rem;"><span class="text-muted">근거리 치명타</span><span class="fw-semibold">@meleeCrit.ToString("0.0")%</span></div>
+                        </div>
+                        <div class="col-6 ps-2 border-start">
+                            <div class="mb-1" style="font-size:0.68rem;color:#f59e0b;font-weight:600;">🏹 원거리 (DEX)</div>
+                            <div class="d-flex justify-content-between" style="font-size:0.78rem;"><span class="text-muted">원거리 대미지</span><span class="fw-semibold">+@rangedDmg</span></div>
+                            <div class="d-flex justify-content-between" style="font-size:0.78rem;"><span class="text-muted">원거리 명중</span><span class="fw-semibold">+@rangedHit</span></div>
+                            <div class="d-flex justify-content-between" style="font-size:0.78rem;"><span class="text-muted">원거리 치명타</span><span class="fw-semibold">@rangedCrit.ToString("0.0")%</span></div>
+                            <div class="d-flex justify-content-between" style="font-size:0.78rem;"><span class="text-muted">물리 방어력</span><span class="fw-semibold">+@physDef</span></div>
+                            <div class="d-flex justify-content-between" style="font-size:0.78rem;"><span class="text-muted">원거리 회피(ER)</span><span class="fw-semibold">+@rangedEvade</span></div>
+                        </div>
+                    </div>
+                    <div class="row g-0 mt-2">
+                        <div class="col-6 pe-2">
+                            <div class="mb-1" style="font-size:0.68rem;color:#3b82f6;font-weight:600;">✨ 마법 (INT)</div>
+                            <div class="d-flex justify-content-between" style="font-size:0.78rem;"><span class="text-muted">마법 대미지</span><span class="fw-semibold">+@magicDmg</span></div>
+                            <div class="d-flex justify-content-between" style="font-size:0.78rem;"><span class="text-muted">마법 명중</span><span class="fw-semibold">+@magicHit</span></div>
+                            <div class="d-flex justify-content-between" style="font-size:0.78rem;"><span class="text-muted">마법 치명타</span><span class="fw-semibold">@magicCrit.ToString("0.0")%</span></div>
+                            <div class="d-flex justify-content-between" style="font-size:0.78rem;"><span class="text-muted">마법 보너스</span><span class="fw-semibold">+@magicBonus</span></div>
+                            <div class="d-flex justify-content-between" style="font-size:0.78rem;"><span class="text-muted">MP소모 감소</span><span class="fw-semibold">@mpCostRed%</span></div>
+                        </div>
+                        <div class="col-6 ps-2 border-start">
+                            <div class="mb-1" style="font-size:0.68rem;color:#22c55e;font-weight:600;">🛡 생존 (CON/WIS)</div>
+                            <div class="d-flex justify-content-between" style="font-size:0.78rem;"><span class="text-muted">HP 보너스</span><span class="fw-semibold">+@hpBonus.ToString("N0")</span></div>
+                            <div class="d-flex justify-content-between" style="font-size:0.78rem;"><span class="text-muted">소지 중량</span><span class="fw-semibold">@weightCap.ToString("N0")</span></div>
+                            <div class="d-flex justify-content-between" style="font-size:0.78rem;"><span class="text-muted">마법 방어력(MR)</span><span class="fw-semibold">+@magicDef</span></div>
+                            <div class="d-flex justify-content-between" style="font-size:0.78rem;"><span class="text-muted">MP 회복(틱)</span><span class="fw-semibold">+@mpRecovery</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 편집 모드 -->
+                <div id="statsEdit" style="display:none;">
+                    <form method="post" action="/GameData/UpdateStats/@Model.Id">
+
+                        <div class="mb-2" style="font-size:0.68rem;font-weight:700;color:#6c8096;letter-spacing:1.2px;">기본 스탯</div>
+                        <div class="row g-2">
+                            @{
+                                var editBase = new[] {
+                                    ("STR 힘", "Str", str),
+                                    ("DEX 민첩", "Dex", dex),
+                                    ("CON 체력", "Con", con),
+                                    ("INT 지능", "Int", intStat),
+                                    ("WIS 지혜", "Wis", wis),
+                                    ("CHA 매력", "Cha", cha),
+                                };
+                            }
+                            @foreach (var (label, field, val) in editBase)
+                            {
+                                <div class="col-6">
+                                    <label class="form-label mb-1 fw-semibold" style="font-size:0.78rem;">@label</label>
+                                    <input type="number" class="form-control form-control-sm" name="Stats.@field" value="@val" min="1" max="99" />
+                                </div>
+                            }
+                        </div>
+
+                        <hr class="my-3" />
+                        <div class="mb-2" style="font-size:0.68rem;font-weight:700;color:#6c8096;letter-spacing:1.2px;">HP / MP</div>
+                        <div class="row g-2">
+                            @{
+                                var editHpMp = new[] {
+                                    ("Max HP", "MaxHp", Model.Stats.MaxHp),
+                                    ("현재 HP", "Hp",   Model.Stats.Hp),
+                                    ("Max MP", "MaxMp", Model.Stats.MaxMp),
+                                    ("현재 MP", "Mp",   Model.Stats.Mp),
+                                };
+                            }
+                            @foreach (var (label, field, val) in editHpMp)
+                            {
+                                <div class="col-6">
+                                    <label class="form-label mb-1 fw-semibold" style="font-size:0.78rem;">@label</label>
+                                    <input type="number" class="form-control form-control-sm" name="Stats.@field" value="@val" min="0" />
+                                </div>
+                            }
+                        </div>
+
+                        <hr class="my-3" />
+                        <div class="mb-2" style="font-size:0.68rem;font-weight:700;color:#6c8096;letter-spacing:1.2px;">방어 & 특수</div>
+                        <div class="row g-2">
+                            <div class="col-4">
+                                <label class="form-label mb-1 fw-semibold" style="font-size:0.78rem;">방어도 (AC)</label>
+                                <input type="number" class="form-control form-control-sm" name="Stats.Ac" value="@Model.Stats.Ac" min="-99" max="99" />
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label mb-1 fw-semibold text-success" style="font-size:0.78rem;">LFE</label>
+                                <input type="number" class="form-control form-control-sm" name="Stats.Lfe" value="@Model.Stats.Lfe" min="0" max="10" />
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label mb-1 fw-semibold text-danger" style="font-size:0.78rem;">DTH</label>
+                                <input type="number" class="form-control form-control-sm" name="Stats.Dth" value="@Model.Stats.Dth" min="0" max="10" />
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 mt-3">
+                            <button type="submit" class="btn btn-sm btn-primary flex-grow-1">저장</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary flex-grow-1" onclick="toggleStatsEdit()">취소</button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ③ 인벤토리 -->
+    <div class="col-md-4">
+        <div class="card h-100 d-flex flex-column">
+            <div class="card-header d-flex justify-content-between align-items-center flex-shrink-0">
+                <span><i class="bi bi-bag-fill me-2"></i>인벤토리 (@Model.Inventory.Count)</span>
+                <div class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-success" onclick="toggleAddItem()" style="font-size:0.75rem;padding:2px 8px;">+ 추가</button>
+                    <form method="post" action="/GameData/AddAllItems/@Model.Id" style="margin:0;" onsubmit="return confirm('마스터 아이템 전체를 인벤토리에 추가하시겠습니까?')">
+                        <button type="submit" class="btn btn-sm btn-outline-warning" style="font-size:0.75rem;padding:2px 8px;">전체 추가</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 아이템 추가 폼 -->
+            @{
+                var allItems = ViewBag.AllItems as List<LineageMOps.Models.Domain.Item> ?? new();
+            }
+            <div id="addItemPanel" style="display:none;" class="px-3 pt-2 pb-2 border-bottom flex-shrink-0" style="background:#141820;">
+                <form method="post" action="/GameData/AddInventoryItem/@Model.Id">
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <select id="itemMasterSelect" class="form-select form-select-sm" onchange="fillItemFromMaster(this)" style="font-size:0.78rem;">
+                                <option value="">-- 마스터에서 선택 (선택사항) --</option>
+                                @foreach (var mi in allItems)
+                                {
+                                    var gt = mi.Grade switch { LineageMOps.Models.Domain.ItemGrade.Normal => "일반", LineageMOps.Models.Domain.ItemGrade.Magic => "마법", LineageMOps.Models.Domain.ItemGrade.Rare => "레어", LineageMOps.Models.Domain.ItemGrade.Epic => "에픽", LineageMOps.Models.Domain.ItemGrade.Legendary => "전설", _ => mi.Grade.ToString() };
+                                    <option value="@mi.Name|@mi.Grade">[@gt] @mi.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-7">
+                            <input type="text" name="itemName" id="addItemName" class="form-control form-control-sm" placeholder="아이템 이름" required style="font-size:0.78rem;" />
+                        </div>
+                        <div class="col-5">
+                            <select name="grade" id="addItemGrade" class="form-select form-select-sm" style="font-size:0.78rem;">
+                                <option value="Normal">일반</option>
+                                <option value="Magic">마법</option>
+                                <option value="Rare">레어</option>
+                                <option value="Epic">에픽</option>
+                                <option value="Legendary">전설</option>
+                            </select>
+                        </div>
+                        <div class="col-4">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text" style="font-size:0.72rem;padding:2px 6px;">수량</span>
+                                <input type="number" name="quantity" class="form-control" value="1" min="1" style="font-size:0.78rem;" />
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text" style="font-size:0.72rem;padding:2px 6px;">강화</span>
+                                <input type="number" name="enchant" class="form-control" value="0" min="0" style="font-size:0.78rem;" />
+                            </div>
+                        </div>
+                        <div class="col-4 d-flex align-items-center">
+                            <div class="form-check mb-0">
+                                <input type="checkbox" class="form-check-input" name="isEquipped" id="addIsEquipped" value="true" />
+                                <label class="form-check-label" style="font-size:0.75rem;" for="addIsEquipped">장착</label>
+                            </div>
+                        </div>
+                        <div class="col-12 d-flex gap-1">
+                            <button type="submit" class="btn btn-sm btn-success flex-grow-1" style="font-size:0.78rem;">추가</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" style="font-size:0.78rem;" onclick="toggleAddItem()">취소</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="flex-grow-1 overflow-auto" style="min-height:0;">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="sticky-top" style="top:0;z-index:1;">
+                        <tr>
+                            <th class="ps-2" style="font-size:0.78rem;">아이템</th>
+                            <th style="font-size:0.78rem;">등급</th>
+                            <th style="font-size:0.78rem;">수량</th>
+                            <th style="font-size:0.78rem;">강화</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Inventory)
+                        {
+                            var (gradeBadge, gradeText) = item.Grade switch
+                            {
+                                LineageMOps.Models.Domain.ItemGrade.Normal    => ("secondary", "일반"),
+                                LineageMOps.Models.Domain.ItemGrade.Magic     => ("info",      "마법"),
+                                LineageMOps.Models.Domain.ItemGrade.Rare      => ("primary",   "레어"),
+                                LineageMOps.Models.Domain.ItemGrade.Epic      => ("warning",   "에픽"),
+                                LineageMOps.Models.Domain.ItemGrade.Legendary => ("danger",    "전설"),
+                                _ => ("secondary", item.Grade.ToString())
+                            };
+                            <!-- 보기 행 -->
+                            <tr id="irow-@item.Id" class="@(item.IsEquipped ? "table-active" : "")">
+                                <td class="ps-2" style="font-size:0.80rem;">
+                                    @if (item.IsEquipped) { <i class="bi bi-check-circle-fill text-success me-1" title="장착 중" style="font-size:0.72rem;"></i> }
+                                    @item.ItemName
+                                </td>
+                                <td><span class="badge bg-@gradeBadge" style="font-size:0.65rem;">@gradeText</span></td>
+                                <td class="text-muted" style="font-size:0.80rem;">@item.Quantity</td>
+                                <td style="font-size:0.80rem;">
+                                    @if (item.Enchant > 0) { <span class="text-warning fw-bold">+@item.Enchant</span> }
+                                    else { <span class="text-muted">-</span> }
+                                </td>
+                                <td class="text-end pe-1" style="white-space:nowrap;">
+                                    <button class="btn btn-link btn-sm p-0 me-1" onclick="toggleItemEdit(@item.Id)" title="수정" style="font-size:0.72rem;color:#9aabbc;">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <form method="post" action="/GameData/RemoveInventoryItem/@Model.Id" style="display:inline;" onsubmit="return confirm('@item.ItemName 을(를) 삭제하시겠습니까?')">
+                                        <input type="hidden" name="inventoryItemId" value="@item.Id" />
+                                        <button type="submit" class="btn btn-link btn-sm p-0 text-danger" title="삭제" style="font-size:0.72rem;">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            <!-- 편집 행 -->
+                            <tr id="iedit-@item.Id" style="display:none;">
+                                <td colspan="5" class="p-2" style="background:#141820;">
+                                    <form method="post" action="/GameData/UpdateInventoryItem/@Model.Id">
+                                        <input type="hidden" name="inventoryItemId" value="@item.Id" />
+                                        <div class="row g-1">
+                                            <div class="col-4">
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text" style="font-size:0.70rem;padding:2px 5px;">수량</span>
+                                                    <input type="number" name="quantity" class="form-control" value="@item.Quantity" min="1" style="font-size:0.75rem;" />
+                                                </div>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text" style="font-size:0.70rem;padding:2px 5px;">강화</span>
+                                                    <input type="number" name="enchant" class="form-control" value="@item.Enchant" min="0" style="font-size:0.75rem;" />
+                                                </div>
+                                            </div>
+                                            <div class="col-4 d-flex align-items-center">
+                                                <div class="form-check mb-0">
+                                                    <input type="checkbox" class="form-check-input" name="isEquipped" value="true" @(item.IsEquipped ? "checked" : "") />
+                                                    <label class="form-check-label" style="font-size:0.72rem;">장착</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-12 d-flex gap-1 mt-1">
+                                                <button type="submit" class="btn btn-primary flex-grow-1" style="font-size:0.72rem;padding:2px 8px;">저장</button>
+                                                <button type="button" class="btn btn-outline-secondary" style="font-size:0.72rem;padding:2px 8px;" onclick="toggleItemEdit(@item.Id)">취소</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <!-- Stats -->
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header"><i class="bi bi-bar-chart me-2"></i>능력치</div>
-            <div class="card-body">
-                @{
-                    var stats = new[] {
-                        ("STR 힘", Model.Stats.Str, 25),
-                        ("DEX 민첩", Model.Stats.Dex, 25),
-                        ("CON 체력", Model.Stats.Con, 25),
-                        ("WIS 지혜", Model.Stats.Wis, 25),
-                        ("INT 지능", Model.Stats.Int, 25),
-                        ("CHA 매력", Model.Stats.Cha, 25)
-                    };
-                }
-                @foreach (var (label, val, max) in stats)
-                {
-                    var pct = (int)((double)val / max * 100);
-                    <div class="mb-2">
-                        <div class="d-flex justify-content-between">
-                            <small class="fw-semibold">@label</small>
-                            <small class="text-muted">@val</small>
-                        </div>
-                        <div class="progress" style="height:6px;">
-                            <div class="progress-bar bg-primary" style="width:@pct%"></div>
-                        </div>
-                    </div>
-                }
-                <hr />
-                <div class="d-flex justify-content-between">
-                    <small class="text-muted">방어도 (AC)</small>
-                    <small class="fw-bold">@Model.Stats.Ac</small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Inventory -->
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header"><i class="bi bi-bag-fill me-2"></i>인벤토리 (@Model.Inventory.Count 아이템)</div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-sm table-hover mb-0">
-                        <thead>
-                            <tr>
-                                <th class="ps-3">아이템</th>
-                                <th>등급</th>
-                                <th>수량</th>
-                                <th>강화</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in Model.Inventory)
-                            {
-                                var (gradeBadge, gradeText) = item.Grade switch
-                                {
-                                    LineageMOps.Models.Domain.ItemGrade.Normal => ("secondary", "일반"),
-                                    LineageMOps.Models.Domain.ItemGrade.Magic => ("info", "마법"),
-                                    LineageMOps.Models.Domain.ItemGrade.Rare => ("primary", "레어"),
-                                    LineageMOps.Models.Domain.ItemGrade.Epic => ("warning", "에픽"),
-                                    LineageMOps.Models.Domain.ItemGrade.Legendary => ("danger", "전설"),
-                                    _ => ("secondary", item.Grade.ToString())
-                                };
-                                <tr class="@(item.IsEquipped ? "table-active" : "")">
-                                    <td class="ps-3" style="font-size:0.82rem;">
-                                        @if (item.IsEquipped) { <i class="bi bi-check-circle-fill text-success me-1" title="장착 중"></i> }
-                                        @item.ItemName
-                                    </td>
-                                    <td><span class="badge bg-@gradeBadge" style="font-size:0.68rem;">@gradeText</span></td>
-                                    <td class="text-muted" style="font-size:0.82rem;">@item.Quantity</td>
-                                    <td style="font-size:0.82rem;">
-                                        @if (item.Enchant > 0) { <span class="text-warning fw-bold">+@item.Enchant</span> }
-                                        else { <span class="text-muted">-</span> }
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
+
+@section Scripts {
+<script>
+    // 레벨 테이블 90개: [0..88] = 레벨 경계 XP, [89] = 레벨90 MaxXP
+    const levelThresholds = [
+        5, 15, 30, 50, 75, 105, 140, 180, 225, 267,
+        362, 564, 969, 1745, 3167, 5681, 9983, 17134, 28716, 47037,
+        75408, 118494, 182775, 277123, 413532, 608029, 881795, 1262541, 1786183, 2498843,
+        3459343, 4742043, 6440263, 8670403, 11576663, 15336663, 20167903, 26335283, 34159803, 44028543,
+        56406163, 71847923, 91014683, 114689763, 158352263, 211797003, 276937743, 356010743, 451620703, 566792123,
+        705026643, 870366763, 1067466663, 1301670703, 1579100143, 1906749063, 2292589943, 2745689883, 3276338263, 3896186743,
+        4618402523, 5457835963, 6431203483, 7557287123, 8938393183, 10622775863, 12666406923, 15134017163, 18100255123, 21650973903,
+        25884657723, 30914000603,
+        36867650881, 43892133500, 52153971024, 61842011987, 73169989587, 86379326924, 101742208751, 119564943647,
+        139566569957, 161982107859, 187078625865, 215117011097, 246413854611, 281303461109, 397843046753, 864001389329, 2728634759633, 10187168240849
+    ];
+
+    function getLevelStartXP(level) {
+        return level <= 1 ? 0 : levelThresholds[level - 2];
+    }
+    function getLevelMaxXP(level) {
+        return levelThresholds[Math.min(level - 1, 89)];
+    }
+
+    function autoFillExp(level) {
+        const lv = parseInt(level) || 1;
+        const startXp = getLevelStartXP(lv);
+        const maxXp   = getLevelMaxXP(lv);
+        document.getElementById('expInput').value = startXp;
+        document.getElementById('expRangeHint').textContent =
+            `레벨 ${lv} 범위: ${startXp.toLocaleString()} ~ ${maxXp.toLocaleString()} XP`;
+    }
+
+    function toggleLevelEdit() {
+        const view = document.getElementById('levelView');
+        const edit = document.getElementById('levelEdit');
+        const isEditing = edit.style.display !== 'none';
+        view.style.display = isEditing ? '' : 'none';
+        edit.style.display = isEditing ? 'none' : '';
+        if (!isEditing) autoFillExp(document.getElementById('levelInput').value);
+    }
+
+    function toggleAddItem() {
+        const panel = document.getElementById('addItemPanel');
+        panel.style.display = panel.style.display === 'none' ? '' : 'none';
+    }
+
+    function fillItemFromMaster(sel) {
+        if (!sel.value) return;
+        const [name, grade] = sel.value.split('|');
+        document.getElementById('addItemName').value = name;
+        document.getElementById('addItemGrade').value = grade;
+    }
+
+    function toggleItemEdit(id) {
+        const row  = document.getElementById('irow-' + id);
+        const edit = document.getElementById('iedit-' + id);
+        const isEditing = edit.style.display !== 'none';
+        edit.style.display = isEditing ? 'none' : '';
+        row.style.opacity  = isEditing ? '1' : '0.4';
+    }
+
+    function toggleCurrencyEdit() {
+        const view = document.getElementById('currencyView');
+        const edit = document.getElementById('currencyEdit');
+        const isEditing = edit.style.display !== 'none';
+        view.style.display = isEditing ? '' : 'none';
+        edit.style.display = isEditing ? 'none' : '';
+    }
+
+    function toggleStatsEdit() {
+        const view = document.getElementById('statsView');
+        const edit = document.getElementById('statsEdit');
+        const btn  = document.getElementById('btnEditStats');
+        const isEditing = edit.style.display !== 'none';
+        view.style.display = isEditing ? '' : 'none';
+        edit.style.display = isEditing ? 'none' : '';
+        btn.innerHTML = isEditing
+            ? '<i class="bi bi-pencil me-1"></i>편집'
+            : '<i class="bi bi-x me-1"></i>취소';
+    }
+</script>
+}

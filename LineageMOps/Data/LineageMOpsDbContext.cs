@@ -16,6 +16,7 @@ public class LineageMOpsDbContext : DbContext
     public DbSet<GameEvent> Events => Set<GameEvent>();
     public DbSet<Notice> Notices => Set<Notice>();
     public DbSet<ServerLog> ServerLogs => Set<ServerLog>();
+    public DbSet<AdminLog> AdminLogs => Set<AdminLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -67,6 +68,8 @@ public class LineageMOpsDbContext : DbContext
                 s.Property(x => x.Mp).HasColumnName("Stats_Mp");
                 s.Property(x => x.MaxMp).HasColumnName("Stats_MaxMp");
                 s.Property(x => x.Ac).HasColumnName("Stats_Ac");
+                s.Property(x => x.Lfe).HasColumnName("Stats_Lfe");
+                s.Property(x => x.Dth).HasColumnName("Stats_Dth");
             });
 
             entity.HasMany(c => c.Inventory)
@@ -120,6 +123,17 @@ public class LineageMOpsDbContext : DbContext
                       v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new()
                   )
                   .HasColumnType("nvarchar(1000)");
+        });
+
+        // AdminLog
+        modelBuilder.Entity<AdminLog>(entity =>
+        {
+            entity.HasKey(l => l.Id);
+            entity.HasIndex(l => l.CreatedAt);
+            entity.Property(l => l.Action).HasMaxLength(200);
+            entity.Property(l => l.Target).HasMaxLength(200);
+            entity.Property(l => l.Detail).HasMaxLength(1000);
+            entity.Property(l => l.OperatorId).HasMaxLength(50);
         });
 
         // ServerLog

@@ -8,9 +8,14 @@ namespace LineageMOps.Controllers;
 public class MonitoringController : Controller
 {
     private readonly IMonitoringService _monitoring;
+    private readonly IAdminLogService _adminLog;
     private const int PageSize = 20;
 
-    public MonitoringController(IMonitoringService monitoring) => _monitoring = monitoring;
+    public MonitoringController(IMonitoringService monitoring, IAdminLogService adminLog)
+    {
+        _monitoring = monitoring;
+        _adminLog = adminLog;
+    }
 
     public IActionResult Index(LogType? type, string? server, string? search, int page = 1)
     {
@@ -20,6 +25,7 @@ public class MonitoringController : Controller
         ViewBag.Type = type;
         ViewBag.Server = server;
         ViewBag.Search = search;
+        ViewBag.AdminLogs = _adminLog.GetRecent(50);
         var paged = new PaginatedList<ServerLog>
         {
             Items = logs,

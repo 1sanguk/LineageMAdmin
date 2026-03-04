@@ -7,9 +7,14 @@ namespace LineageMOps.Controllers;
 public class EventController : Controller
 {
     private readonly IEventService _eventService;
+    private readonly IAdminLogService _adminLog;
     private static readonly string[] AllServers = { "켄라우헬", "바츠", "기란", "오렌", "아덴", "글루디오", "디온" };
 
-    public EventController(IEventService eventService) => _eventService = eventService;
+    public EventController(IEventService eventService, IAdminLogService adminLog)
+    {
+        _eventService = eventService;
+        _adminLog = adminLog;
+    }
 
     public IActionResult Index(string tab = "events")
     {
@@ -48,8 +53,10 @@ public class EventController : Controller
             ViewBag.AllServers = AllServers;
             return View(evt);
         }
-        if (evt.Id == 0) evt.CreatedBy = "op_001";
+        bool isNew = evt.Id == 0;
+        if (isNew) evt.CreatedBy = "op_001";
         _eventService.SaveEvent(evt);
+        _adminLog.Add(isNew ? "이벤트 등록" : "이벤트 수정", evt.Title);
         TempData["Success"] = "이벤트가 저장되었습니다.";
         return RedirectToAction(nameof(Index));
     }
@@ -58,7 +65,9 @@ public class EventController : Controller
     [ValidateAntiForgeryToken]
     public IActionResult DeleteEvent(int id)
     {
+        var evt = _eventService.GetEvent(id);
         _eventService.DeleteEvent(id);
+        _adminLog.Add("이벤트 삭제", evt?.Title ?? $"ID:{id}");
         TempData["Success"] = "이벤트가 삭제되었습니다.";
         return RedirectToAction(nameof(Index));
     }
@@ -91,8 +100,10 @@ public class EventController : Controller
             ViewBag.AllServers = AllServers;
             return View(notice);
         }
-        if (notice.Id == 0) notice.CreatedBy = "op_001";
+        bool isNew = notice.Id == 0;
+        if (isNew) notice.CreatedBy = "op_001";
         _eventService.SaveNotice(notice);
+        _adminLog.Add(isNew ? "공지 등록" : "공지 수정", notice.Title);
         TempData["Success"] = "공지가 저장되었습니다.";
         return RedirectToAction(nameof(Index), new { tab = "notices" });
     }
@@ -101,7 +112,9 @@ public class EventController : Controller
     [ValidateAntiForgeryToken]
     public IActionResult DeleteNotice(int id)
     {
+        var notice = _eventService.GetNotice(id);
         _eventService.DeleteNotice(id);
+        _adminLog.Add("공지 삭제", notice?.Title ?? $"ID:{id}");
         TempData["Success"] = "공지가 삭제되었습니다.";
         return RedirectToAction(nameof(Index), new { tab = "notices" });
     }

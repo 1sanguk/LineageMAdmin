@@ -95,6 +95,9 @@
             <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Monitoring" ? "active" : "")" href="/Monitoring">
                 <i class="bi bi-activity"></i> 모니터링/로그
             </a>
+            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "AdminLog" ? "active" : "")" href="/AdminLog">
+                <i class="bi bi-shield-lock"></i> 어드민 로그
+            </a>
         </div>
         <div style="padding: 16px 20px; border-top: 1px solid #1a2535; margin-top: 16px;">
             <div style="color: #8fa8c0; font-size: 0.75rem;"><i class="bi bi-person-circle me-1"></i> op_001 (운영자)</div>

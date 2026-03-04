@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = "모니터링 / 로그";
     var servers = ViewBag.Servers as List<LineageMOps.Models.Domain.ServerStatus> ?? new();
-    LineageMOps.Models.Domain.LogType? logType = ViewBag.Type;
+LineageMOps.Models.Domain.LogType? logType = ViewBag.Type;
     string? server = ViewBag.Server;
     string? search = ViewBag.Search;
 }
@@ -200,3 +200,4 @@
         </ul>
     </nav>
 }
+

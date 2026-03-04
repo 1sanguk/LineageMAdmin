@@ -18,6 +18,7 @@ public class MockDataStore
     public List<Notice> Notices { get; private set; }
     public List<ServerLog> Logs { get; private set; }
     public List<ServerStatus> Servers { get; private set; }
+    public List<AdminLog> AdminLogs { get; private set; } = new();
 
     private MockDataStore()
     {
@@ -136,6 +137,7 @@ public class MockDataStore
                     MaxExperience = maxExp,
                     ClanName = clanNames[rand.Next(clanNames.Length)],
                     Adena = rand.Next(10000, 50000000),
+                    Diamond = rand.Next(0, 3000),
                     CreatedAt = account.RegisteredAt.AddDays(rand.Next(0, 10)),
                     LastPlayedAt = account.LastLoginAt,
                     Stats = GenerateStats(cls, level, rand),
@@ -171,7 +173,9 @@ public class MockDataStore
             MaxHp = baseHp,
             Mp = (int)(baseMp * 0.8),
             MaxMp = baseMp,
-            Ac = rand.Next(-30, 10)
+            Ac = rand.Next(-30, 10),
+            Lfe = rand.Next(0, 8),
+            Dth = rand.Next(0, 5)
         };
     }
 

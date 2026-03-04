@@ -12,6 +12,7 @@ public class Character
     public long MaxExperience { get; set; }
     public string ClanName { get; set; } = "";
     public int Adena { get; set; }
+    public int Diamond { get; set; }
     public CharacterStats Stats { get; set; } = new();
     public List<InventoryItem> Inventory { get; set; } = new();
     public DateTime CreatedAt { get; set; }
@@ -42,6 +43,8 @@ public class CharacterStats
     public int Mp { get; set; }
     public int MaxMp { get; set; }
     public int Ac { get; set; }
+    public int Lfe { get; set; }
+    public int Dth { get; set; }
 }
 
 public class InventoryItem

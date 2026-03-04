@@ -3,7 +3,9 @@ using LineageMOps.Services;
 using LineageMOps.Services.Sql;
 using Microsoft.EntityFrameworkCore;
 
+
 var builder = WebApplication.CreateBuilder(args);
+
 
 builder.Services.AddControllersWithViews();
 
@@ -21,6 +23,7 @@ if (!useMock)
     builder.Services.AddScoped<IGameDataService, SqlGameDataService>();
     builder.Services.AddScoped<IEventService, SqlEventService>();
     builder.Services.AddScoped<IMonitoringService, SqlMonitoringService>();
+    builder.Services.AddScoped<IAdminLogService, SqlAdminLogService>();
 }
 else
 {
@@ -28,6 +31,7 @@ else
     builder.Services.AddScoped<IGameDataService, GameDataService>();
     builder.Services.AddScoped<IEventService, EventService>();
     builder.Services.AddScoped<IMonitoringService, MonitoringService>();
+    builder.Services.AddScoped<IAdminLogService, AdminLogService>();
 }
 
 var app = builder.Build();

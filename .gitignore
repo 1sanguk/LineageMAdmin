@@ -58,3 +58,7 @@ ScaffoldingReadMe.txt
 # Environment / secrets
 appsettings.Development.json
 .env
+
+# Local documentation (not tracked)
+VERSION.md
+INFORMATION.md
