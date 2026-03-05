@@ -47,7 +47,7 @@ public class UserService : IUserService
 
     public void ApplySanction(SanctionFormViewModel form)
     {
-        var sanction = new SanctionRecord
+        var sanction = new BannedRecord
         {
             AccountId = form.AccountId,
             Type = form.Type,

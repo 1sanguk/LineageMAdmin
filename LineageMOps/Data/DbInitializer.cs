@@ -29,14 +29,14 @@ public static class DbInitializer
             LastLoginAt = a.LastLoginAt,
             IpAddress = a.IpAddress,
             Status = a.Status,
-            Sanctions = new List<SanctionRecord>()
+            Sanctions = new List<BannedRecord>()
         }).ToList();
         db.Accounts.AddRange(accounts);
         db.SaveChanges();
 
-        // Seed SanctionRecords
+        // Seed BannedRecords
         var sanctions = mock.Accounts.SelectMany(a => a.Sanctions).ToList();
-        db.SanctionRecords.AddRange(sanctions);
+        db.BannedRecords.AddRange(sanctions);
         db.SaveChanges();
 
         // Seed Characters (without Inventory first)

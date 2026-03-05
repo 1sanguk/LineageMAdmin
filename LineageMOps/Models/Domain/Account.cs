@@ -11,7 +11,7 @@ public class Account
     public DateTime LastLoginAt { get; set; }
     public string IpAddress { get; set; } = "";
     public AccountStatus Status { get; set; }
-    public List<SanctionRecord> Sanctions { get; set; } = new();
+    public List<BannedRecord> Sanctions { get; set; } = new();
 }
 
 public enum AccountStatus
@@ -22,7 +22,7 @@ public enum AccountStatus
     Dormant
 }
 
-public class SanctionRecord
+public class BannedRecord
 {
     public int Id { get; set; }
     public int AccountId { get; set; }

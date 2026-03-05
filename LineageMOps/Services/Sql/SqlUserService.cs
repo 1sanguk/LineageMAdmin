@@ -54,7 +54,7 @@ public class SqlUserService : IUserService
         var account = _db.Accounts.FirstOrDefault(a => a.Id == form.AccountId);
         if (account == null) return;
 
-        var sanction = new SanctionRecord
+        var sanction = new BannedRecord
         {
             AccountId = form.AccountId,
             Type = form.Type,
@@ -65,7 +65,7 @@ public class SqlUserService : IUserService
             IsActive = true
         };
 
-        _db.SanctionRecords.Add(sanction);
+        _db.BannedRecords.Add(sanction);
         account.Status = form.Type == SanctionType.PermanentBan ? AccountStatus.Banned : AccountStatus.Suspended;
         _db.SaveChanges();
     }

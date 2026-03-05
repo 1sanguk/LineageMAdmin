@@ -9,7 +9,7 @@ public class LineageMOpsDbContext : DbContext
     public LineageMOpsDbContext(DbContextOptions<LineageMOpsDbContext> options) : base(options) { }
 
     public DbSet<Account> Accounts => Set<Account>();
-    public DbSet<SanctionRecord> SanctionRecords => Set<SanctionRecord>();
+    public DbSet<BannedRecord> BannedRecords => Set<BannedRecord>();
     public DbSet<Character> Characters => Set<Character>();
     public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
     public DbSet<Item> Items => Set<Item>();
@@ -38,8 +38,8 @@ public class LineageMOpsDbContext : DbContext
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // SanctionRecord
-        modelBuilder.Entity<SanctionRecord>(entity =>
+        // BannedRecord
+        modelBuilder.Entity<BannedRecord>(entity =>
         {
             entity.HasKey(s => s.Id);
             entity.Property(s => s.Reason).HasMaxLength(500);

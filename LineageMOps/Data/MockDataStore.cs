@@ -68,7 +68,7 @@ public class MockDataStore
                 LastLoginAt = regDate.AddDays(rand.Next(1, (int)(DateTime.Now - regDate).TotalDays)),
                 IpAddress = $"192.168.{rand.Next(1, 255)}.{rand.Next(1, 255)}",
                 Status = status,
-                Sanctions = new List<SanctionRecord>()
+                Sanctions = new List<BannedRecord>()
             };
 
             if (status == AccountStatus.Suspended || status == AccountStatus.Banned || rand.Next(10) < 2)
@@ -76,7 +76,7 @@ public class MockDataStore
                 var sanctionType = status == AccountStatus.Banned ? SanctionType.PermanentBan :
                                    rand.Next(2) == 0 ? SanctionType.ChatBan : SanctionType.LoginRestriction;
                 var startDate = account.RegisteredAt.AddDays(rand.Next(1, 100));
-                account.Sanctions.Add(new SanctionRecord
+                account.Sanctions.Add(new BannedRecord
                 {
                     Id = i * 10,
                     AccountId = i,
@@ -320,7 +320,7 @@ public class MockDataStore
     }
 
     // Mutating helpers
-    public void AddSanction(SanctionRecord sanction)
+    public void AddSanction(BannedRecord sanction)
     {
         var account = Accounts.FirstOrDefault(a => a.Id == sanction.AccountId);
         if (account == null) return;

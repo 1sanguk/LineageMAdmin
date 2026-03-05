@@ -6,7 +6,7 @@ public class UserDetailViewModel
 {
     public Account Account { get; set; } = null!;
     public List<Character> Characters { get; set; } = new();
-    public List<SanctionRecord> SanctionHistory { get; set; } = new();
+    public List<BannedRecord> SanctionHistory { get; set; } = new();
 }
 
 public class SanctionFormViewModel
