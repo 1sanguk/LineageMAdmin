@@ -1,0 +1,6 @@
+# Linguist — 외부 라이브러리 통계 제외
+LineageMOps/wwwroot/lib/** linguist-vendored
+LineageMOps/wwwroot/lib/** linguist-generated
+
+# Razor 뷰를 HTML 대신 C# 계열로 인식
+*.cshtml linguist-language=C#
