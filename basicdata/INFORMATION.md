@@ -59,7 +59,7 @@ LineageMOps/
 │
 ├── Models/
 │   └── Domain/
-│       ├── Account.cs               # 계정 + SanctionRecord
+│       ├── Account.cs               # 계정 + BannedRecord
 │       ├── Character.cs             # 캐릭터 + CharacterStats + InventoryItem
 │       ├── Item.cs                  # 아이템 마스터
 │       ├── GameEvent.cs             # 게임 이벤트
@@ -188,7 +188,7 @@ Character
 | 테이블 | 인덱스 |
 |--------|--------|
 | Accounts | UserId (unique), (Server, LastLoginAt) |
-| SanctionRecords | FK: AccountId |
+| BannedRecords | FK: AccountId |
 | Characters | (Name, Server) |
 | InventoryItems | FK: CharacterId |
 | Items | 마스터 테이블 |

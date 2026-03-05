@@ -68,7 +68,7 @@
 ### EF Core + MS-SQL Server (LocalDB) 연동
 - `Microsoft.EntityFrameworkCore.SqlServer` / `.Tools` / `.Design` 9.0.2 추가
 - `Data/LineageMOpsDbContext.cs` 신규
-  - 8개 DbSet: Accounts, SanctionRecords, Characters, InventoryItems, Items, Events, Notices, ServerLogs, AdminLogs
+  - 8개 DbSet: Accounts, BannedRecords, Characters, InventoryItems, Items, Events, Notices, ServerLogs, AdminLogs
   - `CharacterStats` → `OwnsOne` (같은 행, 컬럼 prefix `Stats_`)
   - `ApplicableServers` → JSON 직렬화 (`nvarchar(1000)`)
   - 인덱스: Account(UserId unique, Server+LastLoginAt), Character(Name+Server), ServerLog(Timestamp+Type+Server), AdminLog(CreatedAt)
