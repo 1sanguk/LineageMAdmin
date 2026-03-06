@@ -59,9 +59,20 @@ LineageMOps/
 │   ├── MonitoringController.cs      # 서버 로그 모니터링
 │   └── AdminLogController.cs        # 어드민 로그
 │
+├── Constants/
+│   ├── AppConstants.cs              # MockOperatorId 등 앱 상수
+│   └── GameConstants.cs             # ServerNames 등 게임 데이터 상수
+│
 ├── Models/Domain/
-│   ├── Account.cs                   # 계정 + BannedRecord
-│   ├── Character.cs                 # 캐릭터 + CharacterStats + InventoryItem
+│   ├── Account.cs                   # 계정
+│   ├── AccountStatus.cs             # 계정 상태 enum
+│   ├── BannedRecord.cs              # 제재 기록
+│   ├── SanctionType.cs              # 제재 유형 enum
+│   ├── Character.cs                 # 캐릭터
+│   ├── CharacterClass.cs            # 직업 enum
+│   ├── CharacterStats.cs            # 능력치
+│   ├── InventoryItem.cs             # 인벤토리 아이템
+│   ├── ItemGrade.cs                 # 아이템 등급 enum
 │   ├── Item.cs                      # 아이템 마스터
 │   ├── GameEvent.cs                 # 게임 이벤트
 │   ├── Notice.cs                    # 공지사항
@@ -82,8 +93,15 @@ LineageMOps/
 │       ├── SqlMonitoringService.cs
 │       └── SqlAdminLogService.cs
 │
+├── Models/ViewModels/
+│   ├── PaginatedList.cs             # 페이지네이션 공통 모델
+│   ├── CharacterDetailViewModel.cs  # 캐릭터 상세 페이지 뷰모델
+│   ├── MonitoringViewModel.cs       # 모니터링 페이지 뷰모델
+│   ├── DashboardViewModel.cs        # 대시보드 뷰모델
+│   └── UserDetailViewModel.cs       # 유저 상세 뷰모델
+│
 ├── Data/
-│   ├── MockDataStore.cs             # Singleton 인메모리 데이터
+│   ├── MockDataStore.cs             # 인메모리 데이터 (DI Singleton)
 │   ├── LineageMOpsDbContext.cs      # EF Core DbContext
 │   └── DbInitializer.cs            # DB 생성 + Mock 데이터 자동 Seed
 │
@@ -158,7 +176,7 @@ LineageMOps/
 | Elf | 요정 | #22c55e (초록) |
 | Wizard | 마법사 | #3b82f6 (파랑) |
 | DarkElf | 다크엘프 | #a855f7 (보라) |
-| Dragonknight | 드래곤나이트 | #ef4444 (빨강) |
+| DragonKnight | 드래곤나이트 | #ef4444 (빨강) |
 | Illusionist | 환술사 | #ec4899 (핑크) |
 
 ### CharacterStats
