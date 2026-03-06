@@ -21,7 +21,8 @@
 ## 실행 방법
 
 ```bash
-dotnet run --project LineageMOps/LineageMOps.csproj
+게시하는 폴더 위치에서
+dotnet LineageMOps.dll 실행
 ```
 
 포트는 `appsettings.json`의 `"Urls"` 키로 설정 (기본: `http://localhost:5200`)
