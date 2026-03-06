@@ -8,39 +8,37 @@ namespace LineageMOps.Controllers;
 public class UserController : Controller
 {
     private readonly IUserService _userService;
+    private readonly IGameDataService _gameDataService;
     private readonly IAdminLogService _adminLog;
     private const int PageSize = 15;
 
-    public UserController(IUserService userService, IAdminLogService adminLog)
+    public UserController(IUserService userService, IGameDataService gameDataService, IAdminLogService adminLog)
     {
         _userService = userService;
+        _gameDataService = gameDataService;
         _adminLog = adminLog;
     }
 
     public IActionResult Index(string? q, string? server, AccountStatus? status, int page = 1)
     {
-        var accounts = _userService.Search(q, server, status, page, PageSize, out int totalCount);
+        var paged = _userService.Search(q, server, status, page, PageSize);
         ViewBag.Query = q;
         ViewBag.Server = server;
         ViewBag.Status = status;
-        ViewBag.Paged = PaginatedList<Account>.Create(
-            accounts.Concat(Enumerable.Empty<Account>()), 1, PageSize);
-        // Already paginated by service, just wrap
-        var paged = new PaginatedList<Account>
-        {
-            Items = accounts,
-            PageIndex = page,
-            TotalPages = (int)Math.Ceiling(totalCount / (double)PageSize),
-            TotalCount = totalCount,
-            PageSize = PageSize
-        };
         return View(paged);
     }
 
     public IActionResult Detail(int id)
     {
-        var vm = _userService.GetDetail(id);
-        if (vm == null) return NotFound();
+        var account = _userService.GetById(id);
+        if (account == null) return NotFound();
+
+        var vm = new UserDetailViewModel
+        {
+            Account = account,
+            Characters = _gameDataService.GetCharactersByAccountId(id),
+            SanctionHistory = account.Sanctions.OrderByDescending(s => s.StartDate).ToList()
+        };
         return View(vm);
     }
 

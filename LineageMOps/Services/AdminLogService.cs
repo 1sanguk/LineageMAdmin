@@ -1,3 +1,4 @@
+using LineageMOps.Constants;
 using LineageMOps.Data;
 using LineageMOps.Models.Domain;
 
@@ -9,7 +10,7 @@ public class AdminLogService : IAdminLogService
 
     public AdminLogService(MockDataStore store) => _store = store;
 
-    public void Add(string action, string target, string? detail = null, string operatorId = "op_001")
+    public void Add(string action, string target, string? detail = null, string operatorId = AppConstants.MockOperatorId)
     {
         var log = new AdminLog
         {
@@ -25,4 +26,7 @@ public class AdminLogService : IAdminLogService
 
     public List<AdminLog> GetRecent(int count = 50) =>
         _store.AdminLogs.Take(count).ToList();
+
+    public int GetTodayNewSanctionCount() =>
+        _store.AdminLogs.Count(l => l.Action.Contains("제재") && l.CreatedAt.Date == DateTime.Today);
 }

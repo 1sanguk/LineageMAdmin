@@ -13,30 +13,3 @@ public class Account
     public AccountStatus Status { get; set; }
     public List<BannedRecord> Sanctions { get; set; } = new();
 }
-
-public enum AccountStatus
-{
-    Active,
-    Suspended,
-    Banned,
-    Dormant
-}
-
-public class BannedRecord
-{
-    public int Id { get; set; }
-    public int AccountId { get; set; }
-    public SanctionType Type { get; set; }
-    public string Reason { get; set; } = "";
-    public DateTime StartDate { get; set; }
-    public DateTime? EndDate { get; set; }
-    public string OperatorId { get; set; } = "";
-    public bool IsActive { get; set; }
-}
-
-public enum SanctionType
-{
-    ChatBan,
-    LoginRestriction,
-    PermanentBan
-}

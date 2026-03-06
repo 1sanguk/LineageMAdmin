@@ -5,8 +5,8 @@ namespace LineageMOps.Services;
 
 public interface IUserService
 {
-    List<Account> Search(string? query, string? server, AccountStatus? status, int page, int pageSize, out int totalCount);
+    PaginatedList<Account> Search(string? query, string? server, AccountStatus? status, int page, int pageSize);
     Account? GetById(int id);
-    UserDetailViewModel? GetDetail(int id);
     void ApplySanction(SanctionFormViewModel form);
+    int GetTodayNewAccountCount();
 }

@@ -11,18 +11,22 @@ public class PaginatedList<T>
     public bool HasPreviousPage => PageIndex > 1;
     public bool HasNextPage => PageIndex < TotalPages;
 
-    public static PaginatedList<T> Create(IEnumerable<T> source, int pageIndex, int pageSize)
+    public static PaginatedList<T> From(List<T> items, int totalCount, int pageIndex, int pageSize)
     {
-        var list = source.ToList();
-        var count = list.Count;
-        var items = list.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
         return new PaginatedList<T>
         {
             Items = items,
             PageIndex = pageIndex,
-            TotalPages = (int)Math.Ceiling(count / (double)pageSize),
-            TotalCount = count,
+            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+            TotalCount = totalCount,
             PageSize = pageSize
         };
+    }
+
+    public static PaginatedList<T> Create(IEnumerable<T> source, int pageIndex, int pageSize)
+    {
+        var list = source.ToList();
+        var items = list.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
+        return From(items, list.Count, pageIndex, pageSize);
     }
 }

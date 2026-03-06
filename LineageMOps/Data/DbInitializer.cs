@@ -11,7 +11,7 @@ public static class DbInitializer
 
         if (db.Accounts.Any()) return; // already seeded
 
-        var mock = MockDataStore.Instance;
+        var mock = serviceProvider.GetRequiredService<MockDataStore>();
 
         // Seed Items
         db.Items.AddRange(mock.Items);

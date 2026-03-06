@@ -1,5 +1,6 @@
 using LineageMOps.Data;
 using LineageMOps.Models.Domain;
+using LineageMOps.Models.ViewModels;
 
 namespace LineageMOps.Services;
 
@@ -9,25 +10,47 @@ public class GameDataService : IGameDataService
 
     public GameDataService(MockDataStore store) => _store = store;
 
-    public List<Character> SearchCharacters(string? query, string? server, string? cls, int page, int pageSize, out int totalCount)
+    public PaginatedList<Character> SearchCharacters(string? query, string? server, string? cls, int page, int pageSize)
     {
-        var q = _store.Characters.AsEnumerable();
+        var characters = _store.Characters.AsEnumerable();
 
         if (!string.IsNullOrWhiteSpace(query))
-            q = q.Where(c => c.Name.Contains(query, StringComparison.OrdinalIgnoreCase));
+            characters = characters.Where(c => c.Name.Contains(query, StringComparison.OrdinalIgnoreCase));
 
         if (!string.IsNullOrWhiteSpace(server))
-            q = q.Where(c => c.Server == server);
+            characters = characters.Where(c => c.Server == server);
 
         if (!string.IsNullOrWhiteSpace(cls) && Enum.TryParse<CharacterClass>(cls, out var parsedClass))
-            q = q.Where(c => c.Class == parsedClass);
+            characters = characters.Where(c => c.Class == parsedClass);
 
-        var list = q.OrderByDescending(c => c.Level).ToList();
-        totalCount = list.Count;
-        return list.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        var sorted = characters.OrderByDescending(c => c.Level).ToList();
+        var items = sorted.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        return PaginatedList<Character>.From(items, sorted.Count, page, pageSize);
     }
 
     public Character? GetCharacter(int id) => _store.Characters.FirstOrDefault(c => c.Id == id);
+
+    public List<Character> GetCharactersByAccountId(int accountId) =>
+        _store.Characters.Where(c => c.AccountId == accountId).ToList();
+
+    public List<string> BuildStatChanges(CharacterStats old, CharacterStats updated)
+    {
+        var changes = new List<string>();
+        if (old.Str != updated.Str) changes.Add($"STR:{old.Str}→{updated.Str}");
+        if (old.Dex != updated.Dex) changes.Add($"DEX:{old.Dex}→{updated.Dex}");
+        if (old.Con != updated.Con) changes.Add($"CON:{old.Con}→{updated.Con}");
+        if (old.Wis != updated.Wis) changes.Add($"WIS:{old.Wis}→{updated.Wis}");
+        if (old.Int != updated.Int) changes.Add($"INT:{old.Int}→{updated.Int}");
+        if (old.Cha != updated.Cha) changes.Add($"CHA:{old.Cha}→{updated.Cha}");
+        if (old.Hp != updated.Hp) changes.Add($"HP:{old.Hp}→{updated.Hp}");
+        if (old.MaxHp != updated.MaxHp) changes.Add($"MaxHP:{old.MaxHp}→{updated.MaxHp}");
+        if (old.Mp != updated.Mp) changes.Add($"MP:{old.Mp}→{updated.Mp}");
+        if (old.MaxMp != updated.MaxMp) changes.Add($"MaxMP:{old.MaxMp}→{updated.MaxMp}");
+        if (old.Ac != updated.Ac) changes.Add($"AC:{old.Ac}→{updated.Ac}");
+        if (old.Lfe != updated.Lfe) changes.Add($"LFE:{old.Lfe}→{updated.Lfe}");
+        if (old.Dth != updated.Dth) changes.Add($"DTH:{old.Dth}→{updated.Dth}");
+        return changes;
+    }
 
     public void UpdateStats(int characterId, CharacterStats stats)
     {
@@ -60,10 +83,9 @@ public class GameDataService : IGameDataService
     {
         var character = _store.Characters.FirstOrDefault(c => c.Id == characterId);
         if (character == null) return;
-        var newId = _store.Characters.SelectMany(c => c.Inventory).Select(i => i.Id).DefaultIfEmpty(0).Max() + 1;
         character.Inventory.Add(new InventoryItem
         {
-            Id = newId,
+            Id = NextInventoryId(),
             CharacterId = characterId,
             ItemName = itemName,
             Grade = grade,
@@ -77,13 +99,13 @@ public class GameDataService : IGameDataService
     {
         var character = _store.Characters.FirstOrDefault(c => c.Id == characterId);
         if (character == null) return;
-        var baseId = _store.Characters.SelectMany(c => c.Inventory).Select(i => i.Id).DefaultIfEmpty(0).Max() + 1;
-        int idx = 0;
+        var baseId = NextInventoryId();
+        var index = 0;
         foreach (var item in _store.Items)
         {
             character.Inventory.Add(new InventoryItem
             {
-                Id = baseId + idx++,
+                Id = baseId + index++,
                 CharacterId = characterId,
                 ItemId = item.Id,
                 ItemName = item.Name,
@@ -112,4 +134,7 @@ public class GameDataService : IGameDataService
         var item = character.Inventory.FirstOrDefault(i => i.Id == inventoryItemId);
         if (item != null) character.Inventory.Remove(item);
     }
+
+    private int NextInventoryId() =>
+        _store.Characters.SelectMany(c => c.Inventory).Select(i => i.Id).DefaultIfEmpty(0).Max() + 1;
 }

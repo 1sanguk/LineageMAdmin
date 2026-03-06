@@ -1,10 +1,10 @@
-@model LineageMOps.Models.ViewModels.PaginatedList<LineageMOps.Models.Domain.ServerLog>
+@model LineageMOps.Models.ViewModels.MonitoringViewModel
 @{
     ViewData["Title"] = "모니터링 / 로그";
-    var servers = ViewBag.Servers as List<LineageMOps.Models.Domain.ServerStatus> ?? new();
-LineageMOps.Models.Domain.LogType? logType = ViewBag.Type;
-    string? server = ViewBag.Server;
-    string? search = ViewBag.Search;
+    var servers = Model.Servers;
+    var logType = Model.FilterType;
+    var server = Model.FilterServer;
+    var search = Model.FilterSearch;
 }
 
 <!-- Server Status Row -->
@@ -80,7 +80,7 @@ LineageMOps.Models.Domain.LogType? logType = ViewBag.Type;
                 <label class="form-label small fw-semibold text-muted">서버</label>
                 <select name="server" class="form-select form-select-sm">
                     <option value="">전체</option>
-                    @foreach (var sv in new[] { "켄라우헬","바츠","기란","오렌","아덴","글루디오","디온" })
+                    @foreach (var sv in Model.AllServerNames)
                     {
                         <option value="@sv" selected="@(server == sv ? "selected" : null)">@sv</option>
                     }
@@ -91,7 +91,7 @@ LineageMOps.Models.Domain.LogType? logType = ViewBag.Type;
             </div>
             <div class="col-md-3 text-end">
                 <span class="text-muted" style="font-size:0.82rem;">
-                    총 <strong>@Model.TotalCount</strong>개 로그
+                    총 <strong>@Model.Logs.TotalCount</strong>개 로그
                 </span>
             </div>
         </form>
@@ -115,7 +115,7 @@ LineageMOps.Models.Domain.LogType? logType = ViewBag.Type;
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var log in Model.Items)
+                    @foreach (var log in Model.Logs.Items)
                     {
                         var (typeBadge, typeText) = log.Type switch
                         {
@@ -181,21 +181,21 @@ LineageMOps.Models.Domain.LogType? logType = ViewBag.Type;
     </div>
 </div>
 
-@if (Model.TotalPages > 1)
+@if (Model.Logs.TotalPages > 1)
 {
     <nav class="mt-3 d-flex justify-content-center">
         <ul class="pagination pagination-sm">
-            <li class="page-item @(!Model.HasPreviousPage ? "disabled" : "")">
-                <a class="page-link" href="?type=@logType&server=@server&search=@search&page=@(Model.PageIndex - 1)">이전</a>
+            <li class="page-item @(!Model.Logs.HasPreviousPage ? "disabled" : "")">
+                <a class="page-link" href="?type=@logType&server=@server&search=@search&page=@(Model.Logs.PageIndex - 1)">이전</a>
             </li>
-            @for (int i = Math.Max(1, Model.PageIndex - 2); i <= Math.Min(Model.TotalPages, Model.PageIndex + 2); i++)
+            @for (int i = Math.Max(1, Model.Logs.PageIndex - 2); i <= Math.Min(Model.Logs.TotalPages, Model.Logs.PageIndex + 2); i++)
             {
-                <li class="page-item @(i == Model.PageIndex ? "active" : "")">
+                <li class="page-item @(i == Model.Logs.PageIndex ? "active" : "")">
                     <a class="page-link" href="?type=@logType&server=@server&search=@search&page=@i">@i</a>
                 </li>
             }
-            <li class="page-item @(!Model.HasNextPage ? "disabled" : "")">
-                <a class="page-link" href="?type=@logType&server=@server&search=@search&page=@(Model.PageIndex + 1)">다음</a>
+            <li class="page-item @(!Model.Logs.HasNextPage ? "disabled" : "")">
+                <a class="page-link" href="?type=@logType&server=@server&search=@search&page=@(Model.Logs.PageIndex + 1)">다음</a>
             </li>
         </ul>
     </nav>

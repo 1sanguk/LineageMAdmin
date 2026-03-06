@@ -1,5 +1,6 @@
 using LineageMOps.Data;
 using LineageMOps.Models.Domain;
+using LineageMOps.Models.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
 namespace LineageMOps.Services.Sql;
@@ -10,28 +11,51 @@ public class SqlGameDataService : IGameDataService
 
     public SqlGameDataService(LineageMOpsDbContext db) => _db = db;
 
-    public List<Character> SearchCharacters(string? query, string? server, string? cls, int page, int pageSize, out int totalCount)
+    public PaginatedList<Character> SearchCharacters(string? query, string? server, string? cls, int page, int pageSize)
     {
-        var q = _db.Characters.AsQueryable();
+        var characters = _db.Characters.AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(query))
-            q = q.Where(c => c.Name.Contains(query));
+            characters = characters.Where(c => c.Name.Contains(query));
 
         if (!string.IsNullOrWhiteSpace(server))
-            q = q.Where(c => c.Server == server);
+            characters = characters.Where(c => c.Server == server);
 
         if (!string.IsNullOrWhiteSpace(cls) && Enum.TryParse<CharacterClass>(cls, out var parsedClass))
-            q = q.Where(c => c.Class == parsedClass);
+            characters = characters.Where(c => c.Class == parsedClass);
 
-        totalCount = q.Count();
-        return q.OrderByDescending(c => c.Level)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
+        var totalCount = characters.Count();
+        var items = characters.OrderByDescending(c => c.Level)
+                              .Skip((page - 1) * pageSize)
+                              .Take(pageSize)
+                              .ToList();
+        return PaginatedList<Character>.From(items, totalCount, page, pageSize);
     }
 
     public Character? GetCharacter(int id) =>
         _db.Characters.Include(c => c.Inventory).FirstOrDefault(c => c.Id == id);
+
+    public List<Character> GetCharactersByAccountId(int accountId) =>
+        _db.Characters.Where(c => c.AccountId == accountId).ToList();
+
+    public List<string> BuildStatChanges(CharacterStats old, CharacterStats updated)
+    {
+        var changes = new List<string>();
+        if (old.Str != updated.Str) changes.Add($"STR:{old.Str}→{updated.Str}");
+        if (old.Dex != updated.Dex) changes.Add($"DEX:{old.Dex}→{updated.Dex}");
+        if (old.Con != updated.Con) changes.Add($"CON:{old.Con}→{updated.Con}");
+        if (old.Wis != updated.Wis) changes.Add($"WIS:{old.Wis}→{updated.Wis}");
+        if (old.Int != updated.Int) changes.Add($"INT:{old.Int}→{updated.Int}");
+        if (old.Cha != updated.Cha) changes.Add($"CHA:{old.Cha}→{updated.Cha}");
+        if (old.Hp != updated.Hp) changes.Add($"HP:{old.Hp}→{updated.Hp}");
+        if (old.MaxHp != updated.MaxHp) changes.Add($"MaxHP:{old.MaxHp}→{updated.MaxHp}");
+        if (old.Mp != updated.Mp) changes.Add($"MP:{old.Mp}→{updated.Mp}");
+        if (old.MaxMp != updated.MaxMp) changes.Add($"MaxMP:{old.MaxMp}→{updated.MaxMp}");
+        if (old.Ac != updated.Ac) changes.Add($"AC:{old.Ac}→{updated.Ac}");
+        if (old.Lfe != updated.Lfe) changes.Add($"LFE:{old.Lfe}→{updated.Lfe}");
+        if (old.Dth != updated.Dth) changes.Add($"DTH:{old.Dth}→{updated.Dth}");
+        return changes;
+    }
 
     public void UpdateLevelExp(int characterId, int level, long experience)
     {
@@ -92,8 +116,7 @@ public class SqlGameDataService : IGameDataService
 
     public void AddAllItems(int characterId)
     {
-        var items = _db.Items.ToList();
-        foreach (var item in items)
+        foreach (var item in _db.Items.ToList())
         {
             _db.InventoryItems.Add(new InventoryItem
             {

@@ -1,3 +1,4 @@
+using LineageMOps.Constants;
 using LineageMOps.Data;
 using LineageMOps.Models.Domain;
 using LineageMOps.Models.ViewModels;
@@ -10,40 +11,27 @@ public class UserService : IUserService
 
     public UserService(MockDataStore store) => _store = store;
 
-    public List<Account> Search(string? query, string? server, AccountStatus? status, int page, int pageSize, out int totalCount)
+    public PaginatedList<Account> Search(string? query, string? server, AccountStatus? status, int page, int pageSize)
     {
-        var q = _store.Accounts.AsEnumerable();
+        var accounts = _store.Accounts.AsEnumerable();
 
         if (!string.IsNullOrWhiteSpace(query))
-            q = q.Where(a => a.UserId.Contains(query, StringComparison.OrdinalIgnoreCase)
-                           || a.UserName.Contains(query, StringComparison.OrdinalIgnoreCase)
-                           || a.Email.Contains(query, StringComparison.OrdinalIgnoreCase));
+            accounts = accounts.Where(a => a.UserId.Contains(query, StringComparison.OrdinalIgnoreCase)
+                                        || a.UserName.Contains(query, StringComparison.OrdinalIgnoreCase)
+                                        || a.Email.Contains(query, StringComparison.OrdinalIgnoreCase));
 
         if (!string.IsNullOrWhiteSpace(server))
-            q = q.Where(a => a.Server == server);
+            accounts = accounts.Where(a => a.Server == server);
 
         if (status.HasValue)
-            q = q.Where(a => a.Status == status.Value);
+            accounts = accounts.Where(a => a.Status == status.Value);
 
-        var list = q.OrderByDescending(a => a.LastLoginAt).ToList();
-        totalCount = list.Count;
-        return list.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        var sorted = accounts.OrderByDescending(a => a.LastLoginAt).ToList();
+        var items = sorted.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        return PaginatedList<Account>.From(items, sorted.Count, page, pageSize);
     }
 
     public Account? GetById(int id) => _store.Accounts.FirstOrDefault(a => a.Id == id);
-
-    public UserDetailViewModel? GetDetail(int id)
-    {
-        var account = _store.Accounts.FirstOrDefault(a => a.Id == id);
-        if (account == null) return null;
-
-        return new UserDetailViewModel
-        {
-            Account = account,
-            Characters = _store.Characters.Where(c => c.AccountId == id).ToList(),
-            SanctionHistory = account.Sanctions.OrderByDescending(s => s.StartDate).ToList()
-        };
-    }
 
     public void ApplySanction(SanctionFormViewModel form)
     {
@@ -54,9 +42,12 @@ public class UserService : IUserService
             Reason = form.Reason,
             StartDate = DateTime.Now,
             EndDate = form.Type == SanctionType.PermanentBan ? null : DateTime.Now.AddDays(form.DurationDays ?? 7),
-            OperatorId = "op_001",
+            OperatorId = AppConstants.MockOperatorId,
             IsActive = true
         };
         _store.AddSanction(sanction);
     }
+
+    public int GetTodayNewAccountCount() =>
+        _store.Accounts.Count(a => a.RegisteredAt.Date == DateTime.Today);
 }

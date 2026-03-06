@@ -1,35 +1,35 @@
-@model LineageMOps.Models.Domain.Character
+@model LineageMOps.Models.ViewModels.CharacterDetailViewModel
 @{
-    ViewData["Title"] = $"캐릭터 상세 - {Model.Name}";
-    var account = ViewBag.Account as LineageMOps.Models.Domain.Account;
-    var className = Model.Class switch
+    ViewData["Title"] = $"캐릭터 상세 - {Model.Character.Name}";
+    var account = Model.Account;
+    var className = Model.Character.Class switch
     {
         LineageMOps.Models.Domain.CharacterClass.Knight      => "군주",
         LineageMOps.Models.Domain.CharacterClass.DarkKnight  => "기사",
         LineageMOps.Models.Domain.CharacterClass.Elf         => "요정",
         LineageMOps.Models.Domain.CharacterClass.Wizard      => "마법사",
         LineageMOps.Models.Domain.CharacterClass.DarkElf     => "다크엘프",
-        LineageMOps.Models.Domain.CharacterClass.Dragonknight => "드래곤나이트",
+        LineageMOps.Models.Domain.CharacterClass.DragonKnight => "드래곤나이트",
         LineageMOps.Models.Domain.CharacterClass.Illusionist => "환술사",
-        _ => Model.Class.ToString()
+        _ => Model.Character.Class.ToString()
     };
-    var classColor = Model.Class switch
+    var classColor = Model.Character.Class switch
     {
         LineageMOps.Models.Domain.CharacterClass.Knight      => "#c8a951",
         LineageMOps.Models.Domain.CharacterClass.DarkKnight  => "#6366f1",
         LineageMOps.Models.Domain.CharacterClass.Elf         => "#22c55e",
         LineageMOps.Models.Domain.CharacterClass.Wizard      => "#3b82f6",
         LineageMOps.Models.Domain.CharacterClass.DarkElf     => "#a855f7",
-        LineageMOps.Models.Domain.CharacterClass.Dragonknight => "#ef4444",
+        LineageMOps.Models.Domain.CharacterClass.DragonKnight => "#ef4444",
         LineageMOps.Models.Domain.CharacterClass.Illusionist => "#ec4899",
         _ => "#6c8096"
     };
-    var expPct = Model.MaxExperience > 0 ? (int)((double)Model.Experience / Model.MaxExperience * 100) : 0;
+    var expPct = Model.Character.MaxExperience > 0 ? (int)((double)Model.Character.Experience / Model.Character.MaxExperience * 100) : 0;
 
     // 기본 스탯
-    int str = Model.Stats.Str, dex = Model.Stats.Dex, con = Model.Stats.Con;
-    int wis = Model.Stats.Wis, intStat = Model.Stats.Int, cha = Model.Stats.Cha;
-    int lfe = Model.Stats.Lfe, dth = Model.Stats.Dth;
+    int str = Model.Character.Stats.Str, dex = Model.Character.Stats.Dex, con = Model.Character.Stats.Con;
+    int wis = Model.Character.Stats.Wis, intStat = Model.Character.Stats.Int, cha = Model.Character.Stats.Cha;
+    int lfe = Model.Character.Stats.Lfe, dth = Model.Character.Stats.Dth;
 
     // 전투 능력치 계산 (리니지M 스탯 시스템 기반)
     int meleeDmg     = (int)(str * 0.5);
@@ -74,17 +74,17 @@
                     <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,@classColor,#0d1117);display:inline-flex;align-items:center;justify-content:center;border:2px solid @classColor;">
                         <i class="bi bi-joystick text-white" style="font-size:1.8rem;"></i>
                     </div>
-                    <h5 class="mt-2 mb-1 fw-bold">@Model.Name</h5>
+                    <h5 class="mt-2 mb-1 fw-bold">@Model.Character.Name</h5>
                     <div>
                         <span class="badge" style="background:@classColor;">@className</span>
-                        <span class="badge bg-dark ms-1">@Model.Server</span>
+                        <span class="badge bg-dark ms-1">@Model.Character.Server</span>
                     </div>
                 </div>
 
                 <!-- 레벨 / 경험치 보기 -->
                 <div class="mb-3" id="levelView">
                     <div class="d-flex justify-content-between align-items-center mb-1">
-                        <small class="fw-semibold">Lv. @Model.Level</small>
+                        <small class="fw-semibold">Lv. @Model.Character.Level</small>
                         <div class="d-flex align-items-center gap-2">
                             <small class="text-muted">@expPct%</small>
                             <button class="btn btn-link p-0" onclick="toggleLevelEdit()" title="수정" style="font-size:0.72rem;color:#9aabbc;line-height:1;">
@@ -95,22 +95,22 @@
                     <div class="progress" style="height:6px;">
                         <div class="progress-bar" style="width:@expPct%;background:@classColor;"></div>
                     </div>
-                    <small class="text-muted" style="font-size:0.72rem;">@Model.Experience.ToString("N0") / @Model.MaxExperience.ToString("N0") EXP</small>
+                    <small class="text-muted" style="font-size:0.72rem;">@Model.Character.Experience.ToString("N0") / @Model.Character.MaxExperience.ToString("N0") EXP</small>
                 </div>
 
                 <!-- 레벨 / 경험치 편집 -->
                 <div class="mb-3" id="levelEdit" style="display:none;">
-                    <form method="post" action="/GameData/UpdateLevelExp/@Model.Id">
+                    <form method="post" action="/GameData/UpdateLevelExp/@Model.Character.Id">
                         <div class="row g-2">
                             <div class="col-5">
                                 <label class="form-label mb-1" style="font-size:0.72rem;color:#9aabbc;">레벨 (1~90)</label>
                                 <input type="number" name="level" id="levelInput" class="form-control form-control-sm"
-                                       value="@Model.Level" min="1" max="90" onchange="autoFillExp(this.value)" style="font-size:0.82rem;" />
+                                       value="@Model.Character.Level" min="1" max="90" onchange="autoFillExp(this.value)" style="font-size:0.82rem;" />
                             </div>
                             <div class="col-7">
                                 <label class="form-label mb-1" style="font-size:0.72rem;color:#9aabbc;">경험치</label>
                                 <input type="number" name="experience" id="expInput" class="form-control form-control-sm"
-                                       value="@Model.Experience" min="0" style="font-size:0.82rem;" />
+                                       value="@Model.Character.Experience" min="0" style="font-size:0.82rem;" />
                             </div>
                             <div class="col-12">
                                 <div id="expRangeHint" class="text-muted" style="font-size:0.68rem;"></div>
@@ -128,15 +128,15 @@
                     <tbody>
                         <tr>
                             <th class="text-muted" style="font-size:0.78rem;width:70px;">혈맹</th>
-                            <td style="font-size:0.82rem;">@(string.IsNullOrEmpty(Model.ClanName) ? "-" : Model.ClanName)</td>
+                            <td style="font-size:0.82rem;">@(string.IsNullOrEmpty(Model.Character.ClanName) ? "-" : Model.Character.ClanName)</td>
                         </tr>
                         <tr>
                             <th class="text-muted" style="font-size:0.78rem;">생성일</th>
-                            <td class="text-muted" style="font-size:0.78rem;">@Model.CreatedAt.ToString("yyyy-MM-dd")</td>
+                            <td class="text-muted" style="font-size:0.78rem;">@Model.Character.CreatedAt.ToString("yyyy-MM-dd")</td>
                         </tr>
                         <tr>
                             <th class="text-muted" style="font-size:0.78rem;">최근 플레이</th>
-                            <td class="text-muted" style="font-size:0.78rem;">@Model.LastPlayedAt.ToString("MM-dd HH:mm")</td>
+                            <td class="text-muted" style="font-size:0.78rem;">@Model.Character.LastPlayedAt.ToString("MM-dd HH:mm")</td>
                         </tr>
                     </tbody>
                 </table>
@@ -149,26 +149,26 @@
                     </div>
                     <div class="d-flex justify-content-between align-items-center py-1">
                         <span class="text-muted" style="font-size:0.78rem;">💰 아데나</span>
-                        <span class="fw-semibold" style="font-size:0.82rem;">@Model.Adena.ToString("N0")</span>
+                        <span class="fw-semibold" style="font-size:0.82rem;">@Model.Character.Adena.ToString("N0")</span>
                     </div>
                     <div class="d-flex justify-content-between align-items-center py-1">
                         <span class="text-muted" style="font-size:0.78rem;">💎 다이아</span>
-                        <span class="fw-semibold" style="font-size:0.82rem;color:#38bdf8;">@Model.Diamond.ToString("N0")</span>
+                        <span class="fw-semibold" style="font-size:0.82rem;color:#38bdf8;">@Model.Character.Diamond.ToString("N0")</span>
                     </div>
                 </div>
 
                 <div id="currencyEdit" style="display:none;">
-                    <form method="post" action="/GameData/UpdateCurrency/@Model.Id">
+                    <form method="post" action="/GameData/UpdateCurrency/@Model.Character.Id">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <small style="font-size:0.72rem;font-weight:700;color:#6c8096;letter-spacing:1px;">재화 수정</small>
                         </div>
                         <div class="mb-2">
                             <label class="form-label mb-1" style="font-size:0.75rem;">💰 아데나</label>
-                            <input type="number" class="form-control form-control-sm" name="adena" value="@Model.Adena" min="0" />
+                            <input type="number" class="form-control form-control-sm" name="adena" value="@Model.Character.Adena" min="0" />
                         </div>
                         <div class="mb-2">
                             <label class="form-label mb-1" style="font-size:0.75rem;">💎 다이아</label>
-                            <input type="number" class="form-control form-control-sm" name="diamond" value="@Model.Diamond" min="0" />
+                            <input type="number" class="form-control form-control-sm" name="diamond" value="@Model.Character.Diamond" min="0" />
                         </div>
                         <div class="d-flex gap-1">
                             <button type="submit" class="btn btn-sm btn-primary flex-grow-1" style="font-size:0.78rem;">저장</button>
@@ -197,7 +197,7 @@
                     <!-- 기본 스탯 -->
                     <div class="mb-2" style="font-size:0.68rem;font-weight:700;color:#6c8096;letter-spacing:1.2px;text-transform:uppercase;">기본 스탯</div>
                     @{
-                        var isKnight = Model.Class == LineageMOps.Models.Domain.CharacterClass.Knight;
+                        var isKnight = Model.Character.Class == LineageMOps.Models.Domain.CharacterClass.Knight;
                         var baseStats = new[]
                         {
                             ("STR", "힘",   str,     "근거리 대미지 · 근거리 명중 · 근거리 치명타",                                         "#ef4444", 50),
@@ -235,26 +235,26 @@
                     <div class="mb-2">
                         <div class="d-flex justify-content-between mb-1">
                             <small class="fw-semibold text-danger">HP</small>
-                            <small>@Model.Stats.Hp.ToString("N0") / @Model.Stats.MaxHp.ToString("N0")</small>
+                            <small>@Model.Character.Stats.Hp.ToString("N0") / @Model.Character.Stats.MaxHp.ToString("N0")</small>
                         </div>
                         <div class="progress" style="height:6px;">
-                            <div class="progress-bar bg-danger" style="width:@(Model.Stats.MaxHp > 0 ? (int)((double)Model.Stats.Hp / Model.Stats.MaxHp * 100) : 0)%"></div>
+                            <div class="progress-bar bg-danger" style="width:@(Model.Character.Stats.MaxHp > 0 ? (int)((double)Model.Character.Stats.Hp / Model.Character.Stats.MaxHp * 100) : 0)%"></div>
                         </div>
                     </div>
                     <div class="mb-3">
                         <div class="d-flex justify-content-between mb-1">
                             <small class="fw-semibold" style="color:#8b5cf6;">MP</small>
-                            <small>@Model.Stats.Mp.ToString("N0") / @Model.Stats.MaxMp.ToString("N0")</small>
+                            <small>@Model.Character.Stats.Mp.ToString("N0") / @Model.Character.Stats.MaxMp.ToString("N0")</small>
                         </div>
                         <div class="progress" style="height:6px;">
-                            <div class="progress-bar" style="width:@(Model.Stats.MaxMp > 0 ? (int)((double)Model.Stats.Mp / Model.Stats.MaxMp * 100) : 0)%;background:#8b5cf6;"></div>
+                            <div class="progress-bar" style="width:@(Model.Character.Stats.MaxMp > 0 ? (int)((double)Model.Character.Stats.Mp / Model.Character.Stats.MaxMp * 100) : 0)%;background:#8b5cf6;"></div>
                         </div>
                     </div>
 
                     <!-- AC -->
                     <div class="mb-2" style="font-size:0.68rem;font-weight:700;color:#6c8096;letter-spacing:1.2px;text-transform:uppercase;">방어도</div>
                     <div class="d-flex align-items-center gap-3 mb-3">
-                        <span class="fw-bold @(Model.Stats.Ac < 0 ? "text-success" : "")" style="font-size:1.3rem;">@Model.Stats.Ac</span>
+                        <span class="fw-bold @(Model.Character.Stats.Ac < 0 ? "text-success" : "")" style="font-size:1.3rem;">@Model.Character.Stats.Ac</span>
                         <span class="text-muted" style="font-size:0.75rem;">AC — 값이 낮을수록(음수) 방어력 높음</span>
                     </div>
 
@@ -299,7 +299,7 @@
 
                 <!-- 편집 모드 -->
                 <div id="statsEdit" style="display:none;">
-                    <form method="post" action="/GameData/UpdateStats/@Model.Id">
+                    <form method="post" action="/GameData/UpdateStats/@Model.Character.Id">
 
                         <div class="mb-2" style="font-size:0.68rem;font-weight:700;color:#6c8096;letter-spacing:1.2px;">기본 스탯</div>
                         <div class="row g-2">
@@ -327,10 +327,10 @@
                         <div class="row g-2">
                             @{
                                 var editHpMp = new[] {
-                                    ("Max HP", "MaxHp", Model.Stats.MaxHp),
-                                    ("현재 HP", "Hp",   Model.Stats.Hp),
-                                    ("Max MP", "MaxMp", Model.Stats.MaxMp),
-                                    ("현재 MP", "Mp",   Model.Stats.Mp),
+                                    ("Max HP", "MaxHp", Model.Character.Stats.MaxHp),
+                                    ("현재 HP", "Hp",   Model.Character.Stats.Hp),
+                                    ("Max MP", "MaxMp", Model.Character.Stats.MaxMp),
+                                    ("현재 MP", "Mp",   Model.Character.Stats.Mp),
                                 };
                             }
                             @foreach (var (label, field, val) in editHpMp)
@@ -347,15 +347,15 @@
                         <div class="row g-2">
                             <div class="col-4">
                                 <label class="form-label mb-1 fw-semibold" style="font-size:0.78rem;">방어도 (AC)</label>
-                                <input type="number" class="form-control form-control-sm" name="Stats.Ac" value="@Model.Stats.Ac" min="-99" max="99" />
+                                <input type="number" class="form-control form-control-sm" name="Stats.Ac" value="@Model.Character.Stats.Ac" min="-99" max="99" />
                             </div>
                             <div class="col-4">
                                 <label class="form-label mb-1 fw-semibold text-success" style="font-size:0.78rem;">LFE</label>
-                                <input type="number" class="form-control form-control-sm" name="Stats.Lfe" value="@Model.Stats.Lfe" min="0" max="10" />
+                                <input type="number" class="form-control form-control-sm" name="Stats.Lfe" value="@Model.Character.Stats.Lfe" min="0" max="10" />
                             </div>
                             <div class="col-4">
                                 <label class="form-label mb-1 fw-semibold text-danger" style="font-size:0.78rem;">DTH</label>
-                                <input type="number" class="form-control form-control-sm" name="Stats.Dth" value="@Model.Stats.Dth" min="0" max="10" />
+                                <input type="number" class="form-control form-control-sm" name="Stats.Dth" value="@Model.Character.Stats.Dth" min="0" max="10" />
                             </div>
                         </div>
 
@@ -374,10 +374,10 @@
     <div class="col-md-4">
         <div class="card h-100 d-flex flex-column">
             <div class="card-header d-flex justify-content-between align-items-center flex-shrink-0">
-                <span><i class="bi bi-bag-fill me-2"></i>인벤토리 (@Model.Inventory.Count)</span>
+                <span><i class="bi bi-bag-fill me-2"></i>인벤토리 (@Model.Character.Inventory.Count)</span>
                 <div class="d-flex gap-1">
                     <button class="btn btn-sm btn-outline-success" onclick="toggleAddItem()" style="font-size:0.75rem;padding:2px 8px;">+ 추가</button>
-                    <form method="post" action="/GameData/AddAllItems/@Model.Id" style="margin:0;" onsubmit="return confirm('마스터 아이템 전체를 인벤토리에 추가하시겠습니까?')">
+                    <form method="post" action="/GameData/AddAllItems/@Model.Character.Id" style="margin:0;" onsubmit="return confirm('마스터 아이템 전체를 인벤토리에 추가하시겠습니까?')">
                         <button type="submit" class="btn btn-sm btn-outline-warning" style="font-size:0.75rem;padding:2px 8px;">전체 추가</button>
                     </form>
                 </div>
@@ -385,10 +385,10 @@
 
             <!-- 아이템 추가 폼 -->
             @{
-                var allItems = ViewBag.AllItems as List<LineageMOps.Models.Domain.Item> ?? new();
+                var allItems = Model.AllItems;
             }
             <div id="addItemPanel" style="display:none;" class="px-3 pt-2 pb-2 border-bottom flex-shrink-0" style="background:#141820;">
-                <form method="post" action="/GameData/AddInventoryItem/@Model.Id">
+                <form method="post" action="/GameData/AddInventoryItem/@Model.Character.Id">
                     <div class="row g-2">
                         <div class="col-12">
                             <select id="itemMasterSelect" class="form-select form-select-sm" onchange="fillItemFromMaster(this)" style="font-size:0.78rem;">
@@ -450,7 +450,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var item in Model.Inventory)
+                        @foreach (var item in Model.Character.Inventory)
                         {
                             var (gradeBadge, gradeText) = item.Grade switch
                             {
@@ -477,7 +477,7 @@
                                     <button class="btn btn-link btn-sm p-0 me-1" onclick="toggleItemEdit(@item.Id)" title="수정" style="font-size:0.72rem;color:#9aabbc;">
                                         <i class="bi bi-pencil"></i>
                                     </button>
-                                    <form method="post" action="/GameData/RemoveInventoryItem/@Model.Id" style="display:inline;" onsubmit="return confirm('@item.ItemName 을(를) 삭제하시겠습니까?')">
+                                    <form method="post" action="/GameData/RemoveInventoryItem/@Model.Character.Id" style="display:inline;" onsubmit="return confirm('@item.ItemName 을(를) 삭제하시겠습니까?')">
                                         <input type="hidden" name="inventoryItemId" value="@item.Id" />
                                         <button type="submit" class="btn btn-link btn-sm p-0 text-danger" title="삭제" style="font-size:0.72rem;">
                                             <i class="bi bi-trash"></i>
@@ -488,7 +488,7 @@
                             <!-- 편집 행 -->
                             <tr id="iedit-@item.Id" style="display:none;">
                                 <td colspan="5" class="p-2" style="background:#141820;">
-                                    <form method="post" action="/GameData/UpdateInventoryItem/@Model.Id">
+                                    <form method="post" action="/GameData/UpdateInventoryItem/@Model.Character.Id">
                                         <input type="hidden" name="inventoryItemId" value="@item.Id" />
                                         <div class="row g-1">
                                             <div class="col-4">

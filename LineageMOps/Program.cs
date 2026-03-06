@@ -12,7 +12,7 @@ builder.Services.AddControllersWithViews();
 bool useMock = builder.Configuration.GetValue<bool>("UseMockData", true);
 
 // MockDataStore is always registered — SqlMonitoringService uses it for live server statuses
-builder.Services.AddSingleton(MockDataStore.Instance);
+builder.Services.AddSingleton<MockDataStore>();
 
 if (!useMock)
 {
