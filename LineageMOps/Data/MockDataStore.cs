@@ -157,19 +157,45 @@ public class MockDataStore
         int baseMp = level * 20 + rand.Next(50, 200);
         return new CharacterStats
         {
-            Str = rand.Next(8, 18) + (cls is CharacterClass.Knight or CharacterClass.DarkKnight ? 3 : 0),
-            Dex = rand.Next(8, 18),
-            Con = rand.Next(8, 18) + (cls is CharacterClass.Knight ? 2 : 0),
-            Wis = rand.Next(8, 18) + (cls is CharacterClass.Wizard or CharacterClass.Elf ? 3 : 0),
-            Int = rand.Next(8, 18) + (cls is CharacterClass.Wizard ? 4 : 0),
-            Cha = rand.Next(8, 18),
+            Str = rand.Next(8, 18) + cls switch
+            {
+                CharacterClass.Knight or CharacterClass.Fighter or CharacterClass.Berserker => 4,
+                CharacterClass.Lord or CharacterClass.DarkKnight or CharacterClass.HolyKnight or CharacterClass.SpellBlade => 2,
+                CharacterClass.DarkElf or CharacterClass.Gunner => 2,
+                _ => 0
+            },
+            Dex = rand.Next(8, 18) + cls switch
+            {
+                CharacterClass.Elf or CharacterClass.DarkElf or CharacterClass.Reaper => 3,
+                CharacterClass.Gunner => 4,
+                _ => 0
+            },
+            Con = rand.Next(8, 18) + cls switch
+            {
+                CharacterClass.Knight => 3,
+                CharacterClass.Lord or CharacterClass.Fighter => 2,
+                _ => 0
+            },
+            Wis = rand.Next(8, 18) + cls switch
+            {
+                CharacterClass.Wizard or CharacterClass.ThunderGod => 2,
+                CharacterClass.Elf or CharacterClass.HolyKnight => 3,
+                _ => 0
+            },
+            Int = rand.Next(8, 18) + cls switch
+            {
+                CharacterClass.Wizard => 4,
+                CharacterClass.ThunderGod or CharacterClass.SpellBlade => 3,
+                _ => 0
+            },
+            Cha = rand.Next(8, 18) + (cls == CharacterClass.Lord ? 4 : 0),
             Hp = (int)(baseHp * 0.7),
             MaxHp = baseHp,
             Mp = (int)(baseMp * 0.8),
             MaxMp = baseMp,
             Ac = rand.Next(-30, 10),
-            Lfe = rand.Next(0, 8),
-            Dth = rand.Next(0, 5)
+            Lfe = rand.Next(0, 8) + (cls == CharacterClass.HolyKnight ? 2 : 0),
+            Dth = rand.Next(0, 5) + (cls is CharacterClass.DarkKnight or CharacterClass.Reaper ? 2 : 0)
         };
     }
 

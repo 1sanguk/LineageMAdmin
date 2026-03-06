@@ -171,13 +171,19 @@ LineageMOps/
 ### 직업 (CharacterClass)
 | 코드 | 이름 | 색상 |
 |------|------|------|
-| Knight | 군주 | #c8a951 (금) |
-| DarkKnight | 기사 | #6366f1 (인디고) |
+| Lord | 군주 | #c8a951 (금) |
+| Knight | 기사 | #6366f1 (인디고) |
 | Elf | 요정 | #22c55e (초록) |
 | Wizard | 마법사 | #3b82f6 (파랑) |
 | DarkElf | 다크엘프 | #a855f7 (보라) |
-| DragonKnight | 드래곤나이트 | #ef4444 (빨강) |
-| Illusionist | 환술사 | #ec4899 (핑크) |
+| Gunner | 총사 | #f97316 (오렌지) |
+| Fighter | 투사 | #ef4444 (빨강) |
+| DarkKnight | 암흑기사 | #7c3aed (진보라) |
+| HolyKnight | 신성검사 | #fbbf24 (앰버) |
+| Berserker | 광전사 | #dc2626 (진홍) |
+| Reaper | 사신 | #6b7280 (회색) |
+| ThunderGod | 뇌신 | #06b6d4 (시안) |
+| SpellBlade | 마검사 | #8b5cf6 (바이올렛) |
 
 ### CharacterStats
 | 스탯 | 설명 |

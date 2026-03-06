@@ -2,6 +2,26 @@
 
 ---
 
+## v3.1.0 (2026-03-06)
+### 직업 시스템 실제 리니지M 13직업으로 전면 개편
+
+**CharacterClass 열거형 변경 (7종 → 13종)**
+- 기존: Knight(군주), DarkKnight(기사), Elf(요정), Wizard(마법사), DarkElf(다크엘프), DragonKnight(드래곤나이트), Illusionist(환술사)
+- 변경: Lord(군주), Knight(기사), Elf(요정), Wizard(마법사), DarkElf(다크엘프), Gunner(총사), Fighter(투사), DarkKnight(암흑기사), HolyKnight(신성검사), Berserker(광전사), Reaper(사신), ThunderGod(뇌신), SpellBlade(마검사)
+
+**MockDataStore GenerateStats 스탯 보너스 갱신**
+- 직업별 특성 반영: 군주(CHA+4), 기사(STR+4, CON+3), 요정(DEX+3, WIS+3), 마법사(INT+4, WIS+2), 다크엘프(DEX+3, STR+2), 총사(DEX+4, STR+2), 투사(STR+4, CON+2), 암흑기사(STR+2, DTH+2), 신성검사(STR+2, WIS+3, LFE+2), 광전사(STR+4), 사신(DEX+3, DTH+2), 뇌신(INT+3, WIS+2), 마검사(STR+2, INT+3)
+
+**뷰 switch 표현식 13직업 반영**
+- `Views/GameData/Detail.cshtml` — className / classColor switch 갱신, `isKnight` → `isLord` (CHA 스탯 설명 조건)
+- `Views/GameData/Index.cshtml` — 직업 필터 드롭다운 / 테이블 className switch 갱신
+- `Views/User/Detail.cshtml` — 캐릭터 목록 className switch 갱신
+
+**직업별 색상 지정**
+- Lord(금), Knight(인디고), Elf(초록), Wizard(파랑), DarkElf(보라), Gunner(오렌지), Fighter(빨강), DarkKnight(진보라), HolyKnight(앰버), Berserker(진홍), Reaper(회색), ThunderGod(시안), SpellBlade(바이올렛)
+
+---
+
 ## v3.0.0 (2026-03-06)
 ### Clean Code 전면 리팩토링 (39개 파일 변경, 11개 신규 생성)
 

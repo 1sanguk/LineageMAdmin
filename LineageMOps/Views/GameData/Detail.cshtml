@@ -4,24 +4,36 @@
     var account = Model.Account;
     var className = Model.Character.Class switch
     {
-        LineageMOps.Models.Domain.CharacterClass.Knight      => "군주",
-        LineageMOps.Models.Domain.CharacterClass.DarkKnight  => "기사",
-        LineageMOps.Models.Domain.CharacterClass.Elf         => "요정",
-        LineageMOps.Models.Domain.CharacterClass.Wizard      => "마법사",
-        LineageMOps.Models.Domain.CharacterClass.DarkElf     => "다크엘프",
-        LineageMOps.Models.Domain.CharacterClass.DragonKnight => "드래곤나이트",
-        LineageMOps.Models.Domain.CharacterClass.Illusionist => "환술사",
+        LineageMOps.Models.Domain.CharacterClass.Lord       => "군주",
+        LineageMOps.Models.Domain.CharacterClass.Knight     => "기사",
+        LineageMOps.Models.Domain.CharacterClass.Elf        => "요정",
+        LineageMOps.Models.Domain.CharacterClass.Wizard     => "마법사",
+        LineageMOps.Models.Domain.CharacterClass.DarkElf    => "다크엘프",
+        LineageMOps.Models.Domain.CharacterClass.Gunner     => "총사",
+        LineageMOps.Models.Domain.CharacterClass.Fighter    => "투사",
+        LineageMOps.Models.Domain.CharacterClass.DarkKnight => "암흑기사",
+        LineageMOps.Models.Domain.CharacterClass.HolyKnight => "신성검사",
+        LineageMOps.Models.Domain.CharacterClass.Berserker  => "광전사",
+        LineageMOps.Models.Domain.CharacterClass.Reaper     => "사신",
+        LineageMOps.Models.Domain.CharacterClass.ThunderGod => "뇌신",
+        LineageMOps.Models.Domain.CharacterClass.SpellBlade => "마검사",
         _ => Model.Character.Class.ToString()
     };
     var classColor = Model.Character.Class switch
     {
-        LineageMOps.Models.Domain.CharacterClass.Knight      => "#c8a951",
-        LineageMOps.Models.Domain.CharacterClass.DarkKnight  => "#6366f1",
-        LineageMOps.Models.Domain.CharacterClass.Elf         => "#22c55e",
-        LineageMOps.Models.Domain.CharacterClass.Wizard      => "#3b82f6",
-        LineageMOps.Models.Domain.CharacterClass.DarkElf     => "#a855f7",
-        LineageMOps.Models.Domain.CharacterClass.DragonKnight => "#ef4444",
-        LineageMOps.Models.Domain.CharacterClass.Illusionist => "#ec4899",
+        LineageMOps.Models.Domain.CharacterClass.Lord       => "#c8a951",
+        LineageMOps.Models.Domain.CharacterClass.Knight     => "#6366f1",
+        LineageMOps.Models.Domain.CharacterClass.Elf        => "#22c55e",
+        LineageMOps.Models.Domain.CharacterClass.Wizard     => "#3b82f6",
+        LineageMOps.Models.Domain.CharacterClass.DarkElf    => "#a855f7",
+        LineageMOps.Models.Domain.CharacterClass.Gunner     => "#f97316",
+        LineageMOps.Models.Domain.CharacterClass.Fighter    => "#ef4444",
+        LineageMOps.Models.Domain.CharacterClass.DarkKnight => "#7c3aed",
+        LineageMOps.Models.Domain.CharacterClass.HolyKnight => "#fbbf24",
+        LineageMOps.Models.Domain.CharacterClass.Berserker  => "#dc2626",
+        LineageMOps.Models.Domain.CharacterClass.Reaper     => "#6b7280",
+        LineageMOps.Models.Domain.CharacterClass.ThunderGod => "#06b6d4",
+        LineageMOps.Models.Domain.CharacterClass.SpellBlade => "#8b5cf6",
         _ => "#6c8096"
     };
     var expPct = Model.Character.MaxExperience > 0 ? (int)((double)Model.Character.Experience / Model.Character.MaxExperience * 100) : 0;
@@ -197,7 +209,7 @@
                     <!-- 기본 스탯 -->
                     <div class="mb-2" style="font-size:0.68rem;font-weight:700;color:#6c8096;letter-spacing:1.2px;text-transform:uppercase;">기본 스탯</div>
                     @{
-                        var isKnight = Model.Character.Class == LineageMOps.Models.Domain.CharacterClass.Knight;
+                        var isLord = Model.Character.Class == LineageMOps.Models.Domain.CharacterClass.Lord;
                         var baseStats = new[]
                         {
                             ("STR", "힘",   str,     "근거리 대미지 · 근거리 명중 · 근거리 치명타",                                         "#ef4444", 50),
@@ -205,7 +217,7 @@
                             ("CON", "체력", con,     "MAX HP · HP 회복(틱) · 물약 회복량/회복률 · 물약 쿨타임 감소 · 최대 소지 무게",          "#22c55e", 50),
                             ("INT", "지능", intStat, "마법 대미지 · 마법 명중 · 마법 치명타 · 마법 보너스 · MP 소모 감소",                     "#3b82f6", 50),
                             ("WIS", "지혜", wis,     "MAX MP · MP 회복(틱) · 물약 MP 회복량 · 마법 방어력(MR)",                              "#8b5cf6", 50),
-                            ("CHA", "매력", cha,     isKnight ? "혈맹원 모집 수 (군주 전용)" : "군주 클래스 전용 스탯",                        "#ec4899", 50),
+                            ("CHA", "매력", cha,     isLord ? "혈맹원 모집 수 (군주 전용)" : "군주 클래스 전용 스탯",                          "#ec4899", 50),
                             ("LFE", "생명", lfe,     "경험치/아이템 손실 방어 · 장비 파괴 방어 · 복구 비용 감소",                             "#22c55e", 10),
                             ("DTH", "죽음", dth,     "대상 경험치/아이템 추가 손실 · 대상 장비 파괴 · 복구 비용 증가",                         "#ef4444", 10),
                         };

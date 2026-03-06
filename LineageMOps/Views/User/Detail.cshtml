@@ -66,13 +66,19 @@
                             {
                                 var className = ch.Class switch
                                 {
-                                    LineageMOps.Models.Domain.CharacterClass.Knight => "군주",
-                                    LineageMOps.Models.Domain.CharacterClass.DarkKnight => "기사",
-                                    LineageMOps.Models.Domain.CharacterClass.Elf => "요정",
-                                    LineageMOps.Models.Domain.CharacterClass.Wizard => "마법사",
-                                    LineageMOps.Models.Domain.CharacterClass.DarkElf => "다크엘프",
-                                    LineageMOps.Models.Domain.CharacterClass.DragonKnight => "드래곤나이트",
-                                    LineageMOps.Models.Domain.CharacterClass.Illusionist => "환술사",
+                                    LineageMOps.Models.Domain.CharacterClass.Lord       => "군주",
+                                    LineageMOps.Models.Domain.CharacterClass.Knight     => "기사",
+                                    LineageMOps.Models.Domain.CharacterClass.Elf        => "요정",
+                                    LineageMOps.Models.Domain.CharacterClass.Wizard     => "마법사",
+                                    LineageMOps.Models.Domain.CharacterClass.DarkElf    => "다크엘프",
+                                    LineageMOps.Models.Domain.CharacterClass.Gunner     => "총사",
+                                    LineageMOps.Models.Domain.CharacterClass.Fighter    => "투사",
+                                    LineageMOps.Models.Domain.CharacterClass.DarkKnight => "암흑기사",
+                                    LineageMOps.Models.Domain.CharacterClass.HolyKnight => "신성검사",
+                                    LineageMOps.Models.Domain.CharacterClass.Berserker  => "광전사",
+                                    LineageMOps.Models.Domain.CharacterClass.Reaper     => "사신",
+                                    LineageMOps.Models.Domain.CharacterClass.ThunderGod => "뇌신",
+                                    LineageMOps.Models.Domain.CharacterClass.SpellBlade => "마검사",
                                     _ => ch.Class.ToString()
                                 };
                                 <tr>
