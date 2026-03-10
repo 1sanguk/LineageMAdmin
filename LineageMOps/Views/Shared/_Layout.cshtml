@@ -36,6 +36,23 @@
         #sidebar .nav-link.active { background: var(--sidebar-active); color: #fff; font-weight: 500; }
         #sidebar .nav-link i { width: 18px; text-align: center; font-size: 1rem; }
 
+        /* 대메뉴 (접힘/펼침) */
+        #sidebar .nav-group-toggle {
+            color: #8fa8c0; padding: 9px 20px; display: flex; align-items: center; gap: 10px;
+            font-size: 0.875rem; cursor: pointer; user-select: none; transition: all 0.15s;
+            border-radius: 0;
+        }
+        #sidebar .nav-group-toggle:hover { background: var(--sidebar-hover); color: #d0e4f7; }
+        #sidebar .nav-group-toggle.open { color: #d0e4f7; }
+        #sidebar .nav-group-toggle i.toggle-icon { margin-left: auto; font-size: 0.75rem; transition: transform 0.2s; }
+        #sidebar .nav-group-toggle.open i.toggle-icon { transform: rotate(90deg); }
+        #sidebar .nav-group-toggle i:first-child { width: 18px; text-align: center; font-size: 1rem; }
+        /* 하위 메뉴 */
+        #sidebar .nav-sub { background: #0a1319; overflow: hidden; }
+        #sidebar .nav-sub .nav-link { padding: 7px 20px 7px 48px; font-size: 0.83rem; color: #6c8096; }
+        #sidebar .nav-sub .nav-link:hover { background: var(--sidebar-hover); color: #d0e4f7; }
+        #sidebar .nav-sub .nav-link.active { background: var(--sidebar-active); color: #fff; font-weight: 500; }
+
         #main-content { margin-left: var(--sidebar-width); min-height: 100vh; display: flex; flex-direction: column; }
         #topbar { height: 56px; background: #fff; border-bottom: 1px solid #e0e5eb; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
         #topbar .page-title { font-size: 1rem; font-weight: 600; color: #1a2535; margin: 0; }
@@ -78,17 +95,53 @@
                 <i class="bi bi-speedometer2"></i> 대시보드
             </a>
         </div>
+        @{
+            var currentCtrl = ViewContext.RouteData.Values["controller"]?.ToString();
+            var isUserGroup  = currentCtrl == "User" || currentCtrl == "GameData";
+            var isAdminGroup = currentCtrl == "Event";
+            var isClanGroup  = currentCtrl == "Clan";
+        }
         <div class="nav-section">
-            <div class="nav-label">관리</div>
-            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "User" ? "active" : "")" href="/User">
-                <i class="bi bi-people-fill"></i> 유저 관리
-            </a>
-            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "GameData" ? "active" : "")" href="/GameData">
-                <i class="bi bi-joystick"></i> 게임 데이터
-            </a>
-            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Event" ? "active" : "")" href="/Event">
-                <i class="bi bi-megaphone-fill"></i> 이벤트/공지
-            </a>
+            <div class="nav-label">운영자 관리</div>
+            <div class="nav-group-toggle @(isAdminGroup ? "open" : "")" data-bs-toggle="collapse" data-bs-target="#menu-admin">
+                <i class="bi bi-person-badge-fill"></i>
+                <span>운영자 관리</span>
+                <i class="bi bi-chevron-right toggle-icon"></i>
+            </div>
+            <div id="menu-admin" class="nav-sub collapse @(isAdminGroup ? "show" : "")">
+                <a class="nav-link @(currentCtrl == "Event" ? "active" : "")" href="/Event">
+                    <i class="bi bi-megaphone-fill"></i> 이벤트/공지
+                </a>
+            </div>
+        </div>
+        <div class="nav-section">
+            <div class="nav-label">유저 관리</div>
+            <div class="nav-group-toggle @(isUserGroup ? "open" : "")" data-bs-toggle="collapse" data-bs-target="#menu-user">
+                <i class="bi bi-people-fill"></i>
+                <span>유저 관리</span>
+                <i class="bi bi-chevron-right toggle-icon"></i>
+            </div>
+            <div id="menu-user" class="nav-sub collapse @(isUserGroup ? "show" : "")">
+                <a class="nav-link @(currentCtrl == "User" ? "active" : "")" href="/User">
+                    <i class="bi bi-person-lines-fill"></i> 유저 데이터
+                </a>
+                <a class="nav-link @(currentCtrl == "GameData" ? "active" : "")" href="/GameData">
+                    <i class="bi bi-joystick"></i> 게임 데이터
+                </a>
+            </div>
+        </div>
+        <div class="nav-section">
+            <div class="nav-label">혈맹 관리</div>
+            <div class="nav-group-toggle @(isClanGroup ? "open" : "")" data-bs-toggle="collapse" data-bs-target="#menu-clan">
+                <i class="bi bi-shield-shaded"></i>
+                <span>혈맹 관리</span>
+                <i class="bi bi-chevron-right toggle-icon"></i>
+            </div>
+            <div id="menu-clan" class="nav-sub collapse @(isClanGroup ? "show" : "")">
+                <a class="nav-link @(currentCtrl == "Clan" ? "active" : "")" href="/Clan">
+                    <i class="bi bi-flag-fill"></i> 혈맹 데이터
+                </a>
+            </div>
         </div>
         <div class="nav-section" style="border-bottom: none;">
             <div class="nav-label">시스템</div>
@@ -142,6 +195,15 @@
     <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>
+        // 아코디언 토글 아이콘 동기화
+        document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(function(toggle) {
+            var target = document.querySelector(toggle.getAttribute('data-bs-target'));
+            if (target) {
+                target.addEventListener('show.bs.collapse', function() { toggle.classList.add('open'); });
+                target.addEventListener('hide.bs.collapse', function() { toggle.classList.remove('open'); });
+            }
+        });
+
         function updateClock() {
             var now = new Date();
             var el = document.getElementById('current-time');

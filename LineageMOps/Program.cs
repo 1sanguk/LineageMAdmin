@@ -24,6 +24,7 @@ if (!useMock)
     builder.Services.AddScoped<IEventService, SqlEventService>();
     builder.Services.AddScoped<IMonitoringService, SqlMonitoringService>();
     builder.Services.AddScoped<IAdminLogService, SqlAdminLogService>();
+    builder.Services.AddScoped<IClanService, ClanService>();
 }
 else
 {
@@ -32,6 +33,7 @@ else
     builder.Services.AddScoped<IEventService, EventService>();
     builder.Services.AddScoped<IMonitoringService, MonitoringService>();
     builder.Services.AddScoped<IAdminLogService, AdminLogService>();
+    builder.Services.AddScoped<IClanService, ClanService>();
 }
 
 var app = builder.Build();

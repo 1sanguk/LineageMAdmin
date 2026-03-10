@@ -1,0 +1,658 @@
+@using LineageMOps.Constants
+@using LineageMOps.Models.Domain
+@model LineageMOps.Models.ViewModels.ClanDetailViewModel
+@{
+    var clan = Model.Clan;
+    ViewData["Title"] = $"혈맹 상세 - {clan.Name}";
+    var lvColor = clan.Level >= 9 ? "danger" : clan.Level >= 7 ? "warning" : clan.Level >= 5 ? "primary" : "secondary";
+
+    static (string label, string color) RankDisplay(ClanRank r) => r switch
+    {
+        ClanRank.Leader   => ("군주", "danger"),
+        ClanRank.Guardian => ("수호", "warning"),
+        ClanRank.Elite    => ("정예", "primary"),
+        ClanRank.Regular  => ("일반", "secondary"),
+        ClanRank.Academy  => ("아카데미", "info"),
+        _                 => ("미정", "secondary"),
+    };
+
+    static string JoinPolicyLabel(JoinPolicy p) => p switch
+    {
+        JoinPolicy.Closed    => "거부",
+        JoinPolicy.Immediate => "즉시",
+        JoinPolicy.Approval  => "승인",
+        JoinPolicy.Password  => "암호",
+        _ => "미정"
+    };
+    static string JoinPolicyColor(JoinPolicy p) => p switch
+    {
+        JoinPolicy.Closed    => "danger",
+        JoinPolicy.Immediate => "success",
+        JoinPolicy.Approval  => "warning",
+        JoinPolicy.Password  => "info",
+        _ => "secondary"
+    };
+}
+
+<!-- 헤더 -->
+<div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+    <a href="/Clan" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>목록</a>
+    <h5 class="mb-0 fw-bold">@clan.Emblem @clan.Name</h5>
+    <span class="badge bg-@lvColor">Lv.@clan.Level</span>
+    <span class="badge bg-dark">@clan.Server</span>
+    @if (clan.HasCastle) { <span class="badge bg-warning text-dark"><i class="bi bi-building me-1"></i>성 점령</span> }
+    @if (clan.HasAjit)   { <span class="badge bg-secondary"><i class="bi bi-house-fill me-1"></i>아지트</span> }
+    @if (clan.IsAtWar)   { <span class="badge bg-danger"><i class="bi bi-swords me-1"></i>혈맹전 중</span> }
+    <span class="badge bg-@JoinPolicyColor(clan.JoinPolicy) ms-1">가입: @JoinPolicyLabel(clan.JoinPolicy)</span>
+    @if (clan.BloodOathLevel > 0) { <span class="badge bg-dark"><i class="bi bi-droplet-fill text-danger me-1"></i>피의 서약 @(clan.BloodOathLevel)단계</span> }
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible py-2 mb-3" role="alert">
+        <i class="bi bi-check-circle me-1"></i>@TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible py-2 mb-3" role="alert">
+        <i class="bi bi-exclamation-triangle me-1"></i>@TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- 메인 탭 -->
+<ul class="nav nav-tabs mb-0" id="mainTab" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-info" type="button">
+            <i class="bi bi-shield-fill me-1"></i>기본 정보
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-members" type="button">
+            <i class="bi bi-people-fill me-1"></i>혈맹원
+            <span class="badge bg-secondary ms-1">@clan.MemberCount</span>
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-activity" type="button">
+            <i class="bi bi-bar-chart-fill me-1"></i>활동 기록
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-relations" type="button">
+            <i class="bi bi-diagram-3-fill me-1"></i>동맹·적대
+            @if (clan.RivalClanNames.Any() || clan.AllyClanNames.Any())
+            {
+                <span class="badge bg-secondary ms-1">@(clan.RivalClanNames.Count + clan.AllyClanNames.Count)</span>
+            }
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-settings" type="button">
+            <i class="bi bi-gear-fill me-1"></i>혈맹 설정
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content border border-top-0 rounded-bottom mb-3 p-3">
+
+    <!-- ===== Tab 1: 기본 정보 ===== -->
+    <div class="tab-pane fade show active" id="tab-info">
+        <div class="row g-3">
+            <!-- 현황 표시 -->
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header fw-semibold"><i class="bi bi-info-circle me-1 text-primary"></i>혈맹 현황</div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="text-muted small mb-1">혈주</div>
+                                <div class="fw-semibold"><i class="bi bi-crown-fill text-warning me-1"></i>@clan.LeaderName</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-muted small mb-1">혈맹 레벨</div>
+                                <div><span class="badge bg-@lvColor fs-6">Lv.@clan.Level</span></div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-muted small mb-1">명성치</div>
+                                <div class="fw-bold text-primary">@clan.Reputation.ToString("N0")</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-muted small mb-1">혈맹 경험치</div>
+                                <div class="fw-bold text-info">@clan.Experience.ToString("N0")</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-muted small mb-1">혈맹원 / 최대</div>
+                                <div>
+                                    <span class="fw-semibold">@clan.MemberCount</span>
+                                    <span class="text-muted"> / @clan.MaxMembers 명</span>
+                                </div>
+                                <div class="progress mt-1" style="height:4px;">
+                                    <div class="progress-bar" style="width:@((int)((double)clan.MemberCount / Math.Max(1, clan.MaxMembers) * 100))%"></div>
+                                </div>
+                            </div>
+                            @if (clan.HasAcademy)
+                            {
+                                <div class="col-6">
+                                    <div class="text-muted small mb-1">아카데미 / 최대</div>
+                                    <div>
+                                        <span class="fw-semibold text-info">@clan.AcademyCount</span>
+                                        <span class="text-muted"> / @clan.MaxAcademy 명</span>
+                                    </div>
+                                </div>
+                            }
+                            <div class="col-6">
+                                <div class="text-muted small mb-1">전쟁 전적</div>
+                                <div>
+                                    <span class="text-success fw-semibold">@clan.WarWins 승</span>
+                                    <span class="text-muted"> / </span>
+                                    <span class="text-danger">@clan.WarLosses 패</span>
+                                    <span class="badge bg-secondary ms-1">@clan.WinRate%</span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-muted small mb-1">피의 서약</div>
+                                <div>
+                                    @if (clan.BloodOathLevel == 0)
+                                    {
+                                        <span class="text-muted small">미개방</span>
+                                    }
+                                    else
+                                    {
+                                        for (int i = 1; i <= ClanConstants.BloodOathMaxLevel; i++)
+                                        {
+                                            <i class="bi bi-droplet-fill @(i <= clan.BloodOathLevel ? "text-danger" : "text-secondary")" style="font-size:0.85rem;"></i>
+                                        }
+                                        <span class="ms-1 small text-muted">@(clan.BloodOathLevel)단계</span>
+                                    }
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-muted small mb-1">창설일</div>
+                                <div class="small">@clan.CreatedAt.ToString("yyyy-MM-dd")</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 기본 정보 편집 -->
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header fw-semibold"><i class="bi bi-pencil-fill me-1 text-warning"></i>기본 정보 수정</div>
+                    <div class="card-body">
+                        <form method="post" action="/Clan/UpdateBasicInfo/@clan.Id">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold text-muted">혈맹 레벨</label>
+                                    <input type="number" name="level" value="@clan.Level" min="1" max="10" class="form-control form-control-sm" />
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold text-muted">명성치</label>
+                                    <input type="number" name="reputation" value="@clan.Reputation" min="0" class="form-control form-control-sm" />
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small fw-semibold text-muted">혈맹 경험치</label>
+                                    <input type="number" name="experience" value="@clan.Experience" min="0" class="form-control form-control-sm" />
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold text-muted">전쟁 승</label>
+                                    <input type="number" name="warWins" value="@clan.WarWins" min="0" class="form-control form-control-sm" />
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold text-muted">전쟁 패</label>
+                                    <input type="number" name="warLosses" value="@clan.WarLosses" min="0" class="form-control form-control-sm" />
+                                </div>
+                                <div class="col-12">
+                                    <div class="d-flex gap-3 pt-1">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="hasAjit" id="chkAjit" value="true" @(clan.HasAjit ? "checked" : "") />
+                                            <label class="form-check-label small" for="chkAjit">아지트 보유</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="hasCastle" id="chkCastle" value="true" @(clan.HasCastle ? "checked" : "") />
+                                            <label class="form-check-label small" for="chkCastle">성 점령</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="isAtWar" id="chkWar" value="true" @(clan.IsAtWar ? "checked" : "") />
+                                            <label class="form-check-label small" for="chkWar">혈맹전 중</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-warning btn-sm mt-3 w-100">
+                                <i class="bi bi-save me-1"></i>저장
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Tab 2: 혈맹원 ===== -->
+    <div class="tab-pane fade" id="tab-members">
+        <!-- 계급별 요약 -->
+        <div class="row g-2 mb-3">
+            @foreach (var rank in new[] { ClanRank.Leader, ClanRank.Guardian, ClanRank.Elite, ClanRank.Regular })
+            {
+                var (rLabel, rColor) = RankDisplay(rank);
+                var cnt = Model.ByRank.TryGetValue(rank, out var rl) ? rl.Count : 0;
+                <div class="col-6 col-sm-3">
+                    <div class="card text-center py-2">
+                        <div class="text-muted small"><span class="badge bg-@rColor @(rColor=="warning"?"text-dark":"")">@rLabel</span></div>
+                        <div class="fw-bold fs-5">@cnt 명</div>
+                    </div>
+                </div>
+            }
+            @if (clan.HasAcademy)
+            {
+                <div class="col-6 col-sm-3">
+                    <div class="card text-center py-2 border-info">
+                        <div class="text-info small"><i class="bi bi-mortarboard me-1"></i>아카데미</div>
+                        <div class="fw-bold fs-5 text-info">@Model.AcademyMembers.Count 명</div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- 혈맹원 탭 -->
+        <ul class="nav nav-tabs" id="memberTab" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#mtab-all" type="button">
+                    전체 <span class="badge bg-secondary">@Model.MainMembers.Count</span>
+                </button>
+            </li>
+            @foreach (var rank in new[] { ClanRank.Guardian, ClanRank.Elite, ClanRank.Regular })
+            {
+                var (rLabel, rColor) = RankDisplay(rank);
+                var cnt = Model.ByRank.TryGetValue(rank, out var rl) ? rl.Count : 0;
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#mtab-@rank" type="button">
+                        @rLabel <span class="badge bg-@rColor @(rColor=="warning"?"text-dark":"")">@cnt</span>
+                    </button>
+                </li>
+            }
+            @if (clan.HasAcademy)
+            {
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#mtab-academy" type="button">
+                        아카데미 <span class="badge bg-info text-dark">@Model.AcademyMembers.Count</span>
+                    </button>
+                </li>
+            }
+        </ul>
+        <div class="tab-content border border-top-0 rounded-bottom">
+            @{
+                var memberTabs = new (string Id, List<ClanMember> Members, bool IsAcademy)[]
+                {
+                    ("mtab-all",                               Model.MainMembers, false),
+                    ($"mtab-{ClanRank.Guardian}",              Model.ByRank.GetValueOrDefault(ClanRank.Guardian, new()), false),
+                    ($"mtab-{ClanRank.Elite}",                 Model.ByRank.GetValueOrDefault(ClanRank.Elite,    new()), false),
+                    ($"mtab-{ClanRank.Regular}",               Model.ByRank.GetValueOrDefault(ClanRank.Regular,  new()), false),
+                };
+            }
+            @foreach (var (tabId, tabMembers, _) in memberTabs)
+            {
+                <div class="tab-pane fade @(tabId == "mtab-all" ? "show active" : "")" id="@tabId">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" style="font-size:0.84rem;">
+                            <thead>
+                                <tr>
+                                    <th class="ps-3">캐릭터명</th>
+                                    <th>직업</th><th>레벨</th><th>계급</th>
+                                    <th>가입일</th><th>마지막 접속</th><th>상태</th>
+                                    <th class="text-end pe-3">관리</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var m in tabMembers.OrderBy(m => (int)m.Rank).ThenByDescending(m => m.Level))
+                                {
+                                    var (rLabel, rColor) = RankDisplay(m.Rank);
+                                    <tr>
+                                        <td class="ps-3 fw-semibold">
+                                            @if (m.Rank == ClanRank.Leader) { <i class="bi bi-crown-fill text-warning me-1" style="font-size:0.8rem;"></i> }
+                                            @m.CharacterName
+                                        </td>
+                                        <td><span class="badge bg-secondary">@m.ClassName</span></td>
+                                        <td><strong>@m.Level</strong></td>
+                                        <td><span class="badge bg-@rColor @(rColor=="warning"?"text-dark":"")">@rLabel</span></td>
+                                        <td class="text-muted">@m.JoinedAt.ToString("yyyy-MM-dd")</td>
+                                        <td class="text-muted">@m.LastOnlineAt.ToString("MM-dd HH:mm")</td>
+                                        <td>
+                                            @if (m.IsOnline) { <span class="badge bg-success">온라인</span> }
+                                            else { <span class="badge bg-light text-muted border">오프라인</span> }
+                                        </td>
+                                        <td class="text-end pe-3">
+                                            @if (m.Rank != ClanRank.Leader)
+                                            {
+                                                <!-- 계급 변경 -->
+                                                <form method="post" action="/Clan/ChangeMemberRank/@clan.Id" class="d-inline">
+                                                    <input type="hidden" name="characterId" value="@m.CharacterId" />
+                                                    <select name="newRank" class="form-select form-select-sm d-inline-block" style="width:90px;font-size:0.78rem;">
+                                                        @foreach (ClanRank r in Enum.GetValues<ClanRank>())
+                                                        {
+                                                            if (r == ClanRank.Academy) continue;
+                                                            var (rl, _) = RankDisplay(r);
+                                                            <option value="@((int)r)" selected="@(m.Rank == r)">@rl</option>
+                                                        }
+                                                    </select>
+                                                    <button type="submit" class="btn btn-outline-primary btn-sm" style="font-size:0.75rem;padding:2px 7px;">변경</button>
+                                                </form>
+                                                <!-- 추방 -->
+                                                <form method="post" action="/Clan/KickMember/@clan.Id" class="d-inline ms-1"
+                                                      onsubmit="return confirm('@m.CharacterName 혈맹원을 추방하시겠습니까?')">
+                                                    <input type="hidden" name="characterId" value="@m.CharacterId" />
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm" style="font-size:0.75rem;padding:2px 7px;">추방</button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">군주</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+            @if (clan.HasAcademy)
+            {
+                <div class="tab-pane fade" id="mtab-academy">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" style="font-size:0.84rem;">
+                            <thead>
+                                <tr>
+                                    <th class="ps-3">캐릭터명</th><th>직업</th><th>레벨</th>
+                                    <th>가입일</th><th>마지막 접속</th><th class="text-end pe-3">관리</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var m in Model.AcademyMembers.OrderByDescending(m => m.Level))
+                                {
+                                    <tr>
+                                        <td class="ps-3 fw-semibold">@m.CharacterName</td>
+                                        <td><span class="badge bg-secondary">@m.ClassName</span></td>
+                                        <td>
+                                            <strong>@m.Level</strong>
+                                            @if (m.Level >= ClanConstants.AcademyGraduationWarn)
+                                            {
+                                                <span class="badge bg-warning text-dark ms-1" style="font-size:0.68rem;">졸업 임박</span>
+                                            }
+                                        </td>
+                                        <td class="text-muted">@m.JoinedAt.ToString("yyyy-MM-dd")</td>
+                                        <td class="text-muted">@m.LastOnlineAt.ToString("MM-dd HH:mm")</td>
+                                        <td class="text-end pe-3">
+                                            <form method="post" action="/Clan/KickMember/@clan.Id" class="d-inline"
+                                                  onsubmit="return confirm('@m.CharacterName 아카데미원을 추방하시겠습니까?')">
+                                                <input type="hidden" name="characterId" value="@m.CharacterId" />
+                                                <button type="submit" class="btn btn-outline-danger btn-sm" style="font-size:0.75rem;padding:2px 7px;">추방</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- ===== Tab 3: 활동 기록 ===== -->
+    <div class="tab-pane fade" id="tab-activity">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" style="font-size:0.82rem;">
+                <thead>
+                    <tr>
+                        <th class="ps-3">캐릭터명</th><th>계급</th>
+                        <th class="text-end">PVE</th>
+                        <th class="text-end">PVP</th>
+                        <th class="text-end">보스</th>
+                        <th class="text-end">PK</th>
+                        <th class="text-center">접속률<small class="text-muted">/30일</small></th>
+                        <th class="text-end">채팅</th>
+                        <th class="text-end">인챈트</th>
+                        <th class="text-end">소환</th>
+                        <th class="text-end">거래</th>
+                        <th class="text-end pe-3">인장퀘</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in Model.MainMembers.Concat(Model.AcademyMembers).OrderBy(m => (int)m.Rank).ThenByDescending(m => m.Level))
+                    {
+                        var (rLabel, rColor) = RankDisplay(m.Rank);
+                        var s = m.ActivityScore;
+                        <tr>
+                            <td class="ps-3 fw-semibold">
+                                @if (m.Rank == ClanRank.Leader) { <i class="bi bi-crown-fill text-warning me-1" style="font-size:0.75rem;"></i> }
+                                @m.CharacterName
+                            </td>
+                            <td><span class="badge bg-@rColor @(rColor=="warning"?"text-dark":"")">@rLabel</span></td>
+                            <td class="text-end">@s.Pve.ToString("N0")</td>
+                            <td class="text-end">@s.Pvp.ToString("N0")</td>
+                            <td class="text-end">@s.Boss.ToString("N0")</td>
+                            <td class="text-end @(s.Pk > 10 ? "text-danger" : "")">@s.Pk</td>
+                            <td class="text-center">
+                                <div class="d-flex align-items-center justify-content-center gap-1">
+                                    <div class="progress flex-grow-1" style="height:6px;width:60px;">
+                                        <div class="progress-bar @(s.LoginRate >= 25 ? "bg-success" : s.LoginRate >= 15 ? "bg-warning" : "bg-danger")"
+                                             style="width:@((int)((double)s.LoginRate/30*100))%"></div>
+                                    </div>
+                                    <span class="text-muted" style="font-size:0.75rem;">@s.LoginRate</span>
+                                </div>
+                            </td>
+                            <td class="text-end">@s.Chat.ToString("N0")</td>
+                            <td class="text-end">@s.Enchant</td>
+                            <td class="text-end">@s.Summon</td>
+                            <td class="text-end">@s.Trade.ToString("N0")</td>
+                            <td class="text-end pe-3">@s.SealQuest</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ===== Tab 4: 동맹·적대 ===== -->
+    <div class="tab-pane fade" id="tab-relations">
+        <div class="row g-3">
+            <!-- 적대 혈맹 -->
+            <div class="col-md-6">
+                <div class="card border-danger h-100">
+                    <div class="card-header text-danger fw-semibold">
+                        <i class="bi bi-x-circle-fill me-1"></i>적대 혈맹
+                        <span class="badge bg-danger ms-1">@clan.RivalClanNames.Count</span>
+                    </div>
+                    <div class="card-body">
+                        @if (clan.RivalClanNames.Any())
+                        {
+                            <ul class="list-group list-group-flush mb-3">
+                                @foreach (var rival in clan.RivalClanNames)
+                                {
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-1">
+                                        <span><i class="bi bi-shield-x text-danger me-2"></i>@rival</span>
+                                        <form method="post" action="/Clan/RemoveRival/@clan.Id" class="d-inline"
+                                              onsubmit="return confirm('@rival 적대 관계를 해제하시겠습니까?')">
+                                            <input type="hidden" name="rivalName" value="@rival" />
+                                            <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2" style="font-size:0.75rem;">해제</button>
+                                        </form>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <p class="text-muted small mb-3">등록된 적대 혈맹이 없습니다.</p>
+                        }
+                        <form method="post" action="/Clan/AddRival/@clan.Id" class="input-group input-group-sm">
+                            <input type="text" name="rivalName" class="form-control" placeholder="혈맹명 입력" required />
+                            <button type="submit" class="btn btn-outline-danger">추가</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 동맹 혈맹 -->
+            <div class="col-md-6">
+                <div class="card border-success h-100">
+                    <div class="card-header text-success fw-semibold">
+                        <i class="bi bi-check-circle-fill me-1"></i>동맹 혈맹
+                        <span class="badge bg-success ms-1">@clan.AllyClanNames.Count</span>
+                    </div>
+                    <div class="card-body">
+                        @if (clan.AllyClanNames.Any())
+                        {
+                            <ul class="list-group list-group-flush mb-3">
+                                @foreach (var ally in clan.AllyClanNames)
+                                {
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-1">
+                                        <span><i class="bi bi-shield-check text-success me-2"></i>@ally</span>
+                                        <form method="post" action="/Clan/RemoveAlly/@clan.Id" class="d-inline"
+                                              onsubmit="return confirm('@ally 동맹 관계를 해제하시겠습니까?')">
+                                            <input type="hidden" name="allyName" value="@ally" />
+                                            <button type="submit" class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size:0.75rem;">해제</button>
+                                        </form>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <p class="text-muted small mb-3">등록된 동맹 혈맹이 없습니다.</p>
+                        }
+                        <form method="post" action="/Clan/AddAlly/@clan.Id" class="input-group input-group-sm">
+                            <input type="text" name="allyName" class="form-control" placeholder="혈맹명 입력" required />
+                            <button type="submit" class="btn btn-outline-success">추가</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Tab 5: 혈맹 설정 ===== -->
+    <div class="tab-pane fade" id="tab-settings">
+        <div class="row g-3">
+            <!-- 소개글 -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header fw-semibold"><i class="bi bi-file-text me-1 text-info"></i>소개글</div>
+                    <div class="card-body d-flex flex-column">
+                        <form method="post" action="/Clan/UpdateIntroduction/@clan.Id" class="d-flex flex-column flex-grow-1">
+                            <textarea name="introduction" class="form-control form-control-sm flex-grow-1 mb-2" rows="5"
+                                      placeholder="혈맹 소개글...">@clan.Introduction</textarea>
+                            <button type="submit" class="btn btn-info btn-sm">
+                                <i class="bi bi-save me-1"></i>소개글 저장
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 공지사항 -->
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header fw-semibold"><i class="bi bi-megaphone me-1 text-warning"></i>공지사항</div>
+                    <div class="card-body d-flex flex-column">
+                        <form method="post" action="/Clan/UpdateNotice/@clan.Id" class="d-flex flex-column flex-grow-1">
+                            <textarea name="notice" class="form-control form-control-sm flex-grow-1 mb-2" rows="5"
+                                      placeholder="혈맹 공지사항...">@clan.Notice</textarea>
+                            <button type="submit" class="btn btn-warning btn-sm">
+                                <i class="bi bi-save me-1"></i>공지 저장
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 피의 서약 & 가입 정책 -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header fw-semibold"><i class="bi bi-sliders me-1 text-secondary"></i>운영 설정</div>
+                    <div class="card-body">
+                        <form method="post" action="/Clan/UpdateSettings/@clan.Id">
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold text-muted">
+                                        <i class="bi bi-droplet-fill text-danger me-1"></i>피의 서약 레벨
+                                    </label>
+                                    <select name="bloodOathLevel" class="form-select form-select-sm">
+                                        <option value="0" selected="@(clan.BloodOathLevel == 0)">미개방</option>
+                                        @for (int i = 1; i <= ClanConstants.BloodOathMaxLevel; i++)
+                                        {
+                                            <option value="@i" selected="@(clan.BloodOathLevel == i)">@i 단계 (최대인원 +@(i * ClanConstants.BloodOathMembersPerLevel))</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-semibold text-muted">
+                                        <i class="bi bi-door-open me-1"></i>가입 정책
+                                    </label>
+                                    <select name="joinPolicy" class="form-select form-select-sm">
+                                        @foreach (JoinPolicy p in Enum.GetValues<JoinPolicy>())
+                                        {
+                                            <option value="@((int)p)" selected="@(clan.JoinPolicy == p)">@JoinPolicyLabel(p)</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                                        <i class="bi bi-save me-1"></i>설정 저장
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- 위험 구역 -->
+<div class="card border-danger">
+    <div class="card-header text-danger fw-semibold"><i class="bi bi-exclamation-triangle-fill me-1"></i>위험 구역</div>
+    <div class="card-body">
+        <p class="text-muted small mb-3">
+            혈맹을 강제 해산하면 모든 혈맹원(@clan.MemberCount 명)이 탈퇴 처리됩니다. 해산 후 혈주는 24시간간 재창설이 불가합니다.
+            @if (clan.HasCastle) { <span class="text-danger fw-semibold"> ⚠ 성을 보유 중이므로 해산이 불가합니다.</span> }
+        </p>
+        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#disbandModal"
+                @(clan.HasCastle ? "disabled" : "")>
+            <i class="bi bi-x-circle-fill me-1"></i>혈맹 강제 해산
+        </button>
+    </div>
+</div>
+
+<!-- 해산 모달 -->
+<div class="modal fade" id="disbandModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-danger">
+                <h6 class="modal-title text-danger fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i>혈맹 강제 해산</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>'@clan.Name'</strong> 혈맹을 강제 해산하시겠습니까?</p>
+                <ul class="text-muted small">
+                    <li>혈맹원 <strong>@clan.MemberCount 명</strong> 전원 탈퇴 처리</li>
+                    @if (clan.HasAcademy) { <li>아카데미원 <strong>@clan.AcademyCount 명</strong> 탈퇴 처리</li> }
+                    <li>혈주는 24시간 혈맹 재창설 불가</li>
+                    <li>혈맹 스킬 삭제, 창고 아이템 삭제</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">취소</button>
+                <form method="post" action="/Clan/Disband/@clan.Id" class="d-inline">
+                    <button type="submit" class="btn btn-danger btn-sm">강제 해산 확인</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
