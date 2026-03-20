@@ -2,6 +2,33 @@
 
 ---
 
+## v3.3.0 (2026-03-20)
+### Constraint 관리 기능 추가
+
+**새 파일**
+- `Models/Domain/GameConstraint.cs` — Constraint 도메인 모델 (Id/Category/Key/DisplayName/Description/ValueType/Value/DefaultValue/Min/Max/Unit/UpdatedAt)
+- `Models/Domain/ConstraintCategory.cs` — 카테고리 enum (Boss/Mob/Economy/PvP/Server/Buff)
+- `Models/Domain/ConstraintValueType.cs` — 값 유형 enum (Int/Float/Bool)
+- `Services/IConstraintService.cs` — 인터페이스 (GetAll/GetById/UpdateValue/ResetToDefault)
+- `Services/ConstraintService.cs` — Mock 구현체 (MockDataStore 기반)
+- `Controllers/ConstraintController.cs` — Index/Update(POST)/Reset(POST), 유효성 검증 + 어드민 로그
+- `Views/Constraint/Index.cshtml` — 카테고리별 카드 테이블, 인라인 편집, 기본값 복원
+
+**변경 파일**
+- `Data/MockDataStore.cs` — Constraints 프로퍼티 + SeedConstraints() (23개 기본 설정값)
+- `Program.cs` — IConstraintService/ConstraintService DI 등록 (Mock/SQL 양 모드)
+- `Views/Shared/_Layout.cshtml` — 운영자 관리 > Constraint 관리 메뉴 추가
+
+**기본 제공 Constraint 항목 (23개)**
+- 보스(5): 일반/레이드 리젠 시간, HP배율, 드랍률, 경험치 배율
+- 몹(4): 리젠 시간, 경험치/드랍률 배율, 최대 밀도
+- 경제(5): 아데나/아이템 드랍률, 상점 가격, 거래세율, 강화 성공률
+- PvP(3): PK 경험치/아이템 패널티, 패널티 지속시간
+- 서버(3): 최대 접속자 수, 점검 모드, 경험치 보너스
+- 버프(3): 로그인 보너스, 이벤트 경험치/드랍 보너스
+
+---
+
 ## v3.1.0 (2026-03-06)
 ### 직업 시스템 실제 리니지M 13직업으로 전면 개편
 

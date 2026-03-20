@@ -98,7 +98,7 @@
         @{
             var currentCtrl = ViewContext.RouteData.Values["controller"]?.ToString();
             var isUserGroup  = currentCtrl == "User" || currentCtrl == "GameData";
-            var isAdminGroup = currentCtrl == "Event";
+            var isAdminGroup = currentCtrl == "Event" || currentCtrl == "Constraint";
             var isClanGroup  = currentCtrl == "Clan";
         }
         <div class="nav-section">
@@ -111,6 +111,9 @@
             <div id="menu-admin" class="nav-sub collapse @(isAdminGroup ? "show" : "")">
                 <a class="nav-link @(currentCtrl == "Event" ? "active" : "")" href="/Event">
                     <i class="bi bi-megaphone-fill"></i> 이벤트/공지
+                </a>
+                <a class="nav-link @(currentCtrl == "Constraint" ? "active" : "")" href="/Constraint">
+                    <i class="bi bi-sliders"></i> Constraint 관리
                 </a>
             </div>
         </div>

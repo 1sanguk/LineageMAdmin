@@ -1,0 +1,233 @@
+@using LineageMOps.Models.Domain
+@model Dictionary<ConstraintCategory, List<GameConstraint>>
+@{
+    ViewData["Title"] = "게임 Constraint 관리";
+
+    static string CategoryIcon(ConstraintCategory cat) => cat switch
+    {
+        ConstraintCategory.Boss    => "bi-fire",
+        ConstraintCategory.Mob     => "bi-bug-fill",
+        ConstraintCategory.Economy => "bi-coin",
+        ConstraintCategory.PvP     => "bi-sword",
+        ConstraintCategory.Server  => "bi-server",
+        ConstraintCategory.Buff    => "bi-stars",
+        _                          => "bi-sliders"
+    };
+
+    static string CategoryLabel(ConstraintCategory cat) => cat switch
+    {
+        ConstraintCategory.Boss    => "보스",
+        ConstraintCategory.Mob     => "몹",
+        ConstraintCategory.Economy => "경제",
+        ConstraintCategory.PvP     => "PvP",
+        ConstraintCategory.Server  => "서버",
+        ConstraintCategory.Buff    => "버프/이벤트",
+        _                          => cat.ToString()
+    };
+
+    static string CategoryColor(ConstraintCategory cat) => cat switch
+    {
+        ConstraintCategory.Boss    => "#ef4444",
+        ConstraintCategory.Mob     => "#22c55e",
+        ConstraintCategory.Economy => "#f59e0b",
+        ConstraintCategory.PvP     => "#6366f1",
+        ConstraintCategory.Server  => "#3b82f6",
+        ConstraintCategory.Buff    => "#ec4899",
+        _                          => "#6b7280"
+    };
+}
+
+<style>
+    .constraint-card { border-radius: 10px; overflow: hidden; margin-bottom: 1.5rem; }
+    .constraint-card .card-header { padding: 14px 20px; display: flex; align-items: center; gap: 10px; }
+    .constraint-card .card-header .cat-icon { font-size: 1.2rem; }
+    .constraint-card .card-header .cat-title { font-size: 0.95rem; font-weight: 700; margin: 0; }
+    .constraint-card .card-header .cat-count { font-size: 0.75rem; opacity: 0.7; margin-left: auto; }
+
+    .constraint-table th { font-size: 0.75rem; font-weight: 600; color: #6c8096; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+    .constraint-table td { vertical-align: middle; font-size: 0.875rem; }
+    .constraint-table .col-name { min-width: 180px; }
+    .constraint-table .col-desc { color: #6c8096; font-size: 0.8rem; }
+    .constraint-table .col-value { min-width: 160px; }
+    .constraint-table .col-default { color: #6c8096; font-size: 0.8rem; white-space: nowrap; }
+    .constraint-table .col-range { color: #6c8096; font-size: 0.78rem; white-space: nowrap; }
+    .constraint-table .col-updated { color: #6c8096; font-size: 0.78rem; white-space: nowrap; }
+
+    .value-display { display: flex; align-items: center; gap: 8px; }
+    .value-badge { font-size: 0.875rem; font-weight: 600; padding: 4px 10px; border-radius: 6px; background: #f0f7ff; color: #1e40af; border: 1px solid #bfdbfe; font-family: monospace; }
+    .value-badge.modified { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+    .value-badge.bool-true  { background: #dcfce7; color: #166534; border-color: #86efac; }
+    .value-badge.bool-false { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+
+    .edit-form { display: none; align-items: center; gap: 6px; }
+    .edit-form.active { display: flex; }
+    .edit-form input[type=number], .edit-form input[type=text] { width: 100px; font-size: 0.875rem; padding: 4px 8px; }
+    .edit-form select { font-size: 0.875rem; padding: 4px 8px; }
+
+    .btn-edit   { padding: 3px 8px; font-size: 0.78rem; }
+    .btn-save   { padding: 3px 8px; font-size: 0.78rem; }
+    .btn-cancel { padding: 3px 8px; font-size: 0.78rem; }
+    .btn-reset  { padding: 3px 8px; font-size: 0.78rem; }
+</style>
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+        <h5 class="mb-1 fw-bold">게임 Constraint 관리</h5>
+        <p class="text-muted mb-0" style="font-size:0.85rem;">게임 서버가 참조하는 핵심 수치 설정을 조회하고 변경합니다. 변경 즉시 서버에 반영됩니다.</p>
+    </div>
+    <span class="badge bg-secondary">총 @Model.Values.Sum(v => v.Count)개 항목</span>
+</div>
+
+@foreach (var group in Model)
+{
+    var cat = group.Key;
+    var items = group.Value;
+    var color = CategoryColor(cat);
+    var modifiedCount = items.Count(c => c.Value != c.DefaultValue);
+
+    <div class="card constraint-card">
+        <div class="card-header" style="border-left: 4px solid @color; background:#fff;">
+            <i class="bi @CategoryIcon(cat) cat-icon" style="color:@color;"></i>
+            <span class="cat-title">@CategoryLabel(cat)</span>
+            @if (modifiedCount > 0)
+            {
+                <span class="badge ms-2" style="background:@color; font-size:0.7rem;">@(modifiedCount)개 변경됨</span>
+            }
+            <span class="cat-count">@(items.Count)개 항목</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover constraint-table mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4 col-name">항목명</th>
+                            <th class="col-desc">설명</th>
+                            <th class="col-value">현재 값</th>
+                            <th class="col-default">기본값</th>
+                            <th class="col-range">범위</th>
+                            <th class="col-updated">마지막 수정</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in items)
+                        {
+                            var isModified = c.Value != c.DefaultValue;
+                            var isBool = c.ValueType == ConstraintValueType.Bool;
+                            var valueBadgeClass = isBool
+                                ? (c.Value == "true" ? "bool-true" : "bool-false")
+                                : (isModified ? "modified" : "");
+                            var displayValue = isBool
+                                ? (c.Value == "true" ? "활성화" : "비활성화")
+                                : (c.Unit is not null ? $"{c.Value} {c.Unit}" : c.Value);
+
+                            <tr id="row-@c.Id">
+                                <td class="ps-4">
+                                    <div class="fw-semibold" style="font-size:0.875rem;">@c.DisplayName</div>
+                                    <div style="font-size:0.72rem; color:#94a3b8; font-family:monospace;">@c.Key</div>
+                                </td>
+                                <td class="col-desc">@c.Description</td>
+                                <td class="col-value">
+                                    <div class="value-display" id="display-@c.Id">
+                                        <span class="value-badge @valueBadgeClass">@displayValue</span>
+                                        <button class="btn btn-outline-primary btn-edit" onclick="startEdit(@c.Id)">
+                                            <i class="bi bi-pencil-fill"></i>
+                                        </button>
+                                    </div>
+                                    <div class="edit-form" id="edit-@c.Id">
+                                        @if (isBool)
+                                        {
+                                            <form method="post" action="/Constraint/Update" class="d-flex align-items-center gap-2">
+                                                <input type="hidden" name="id" value="@c.Id" />
+                                                <select name="value" class="form-select form-select-sm" style="width:auto;">
+                                                    @if (c.Value == "true")
+                                                    {
+                                                        <option value="true" selected>활성화</option>
+                                                        <option value="false">비활성화</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="true">활성화</option>
+                                                        <option value="false" selected>비활성화</option>
+                                                    }
+                                                </select>
+                                                <button type="submit" class="btn btn-success btn-save btn-sm">저장</button>
+                                                <button type="button" class="btn btn-secondary btn-cancel btn-sm" onclick="cancelEdit(@c.Id)">취소</button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <form method="post" action="/Constraint/Update" class="d-flex align-items-center gap-2">
+                                                <input type="hidden" name="id" value="@c.Id" />
+                                                <input type="number"
+                                                       name="value"
+                                                       value="@c.Value"
+                                                       step="@(c.ValueType == ConstraintValueType.Float ? "0.1" : "1")"
+                                                       @(c.Min.HasValue ? $"min=\"{c.Min}\"" : "")
+                                                       @(c.Max.HasValue ? $"max=\"{c.Max}\"" : "")
+                                                       class="form-control form-control-sm"
+                                                       style="width:110px;" />
+                                                @if (c.Unit is not null)
+                                                {
+                                                    <span class="text-muted" style="font-size:0.8rem;">@c.Unit</span>
+                                                }
+                                                <button type="submit" class="btn btn-success btn-save btn-sm">저장</button>
+                                                <button type="button" class="btn btn-secondary btn-cancel btn-sm" onclick="cancelEdit(@c.Id)">취소</button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="col-default">
+                                    @if (isBool)
+                                    {
+                                        <span>@(c.DefaultValue == "true" ? "활성화" : "비활성화")</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@c.DefaultValue @c.Unit</span>
+                                    }
+                                </td>
+                                <td class="col-range">
+                                    @if (!isBool && c.Min.HasValue && c.Max.HasValue)
+                                    {
+                                        <span>@c.Min ~ @c.Max</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                                <td class="col-updated">@c.UpdatedAt.ToString("MM-dd HH:mm")</td>
+                                <td class="pe-3">
+                                    @if (isModified)
+                                    {
+                                        <form method="post" action="/Constraint/Reset" class="d-inline"
+                                              onsubmit="return confirm('@c.DisplayName 을(를) 기본값(@c.DefaultValue)으로 복원하시겠습니까?')">
+                                            <input type="hidden" name="id" value="@c.Id" />
+                                            <button type="submit" class="btn btn-outline-warning btn-reset btn-sm" title="기본값 복원">
+                                                <i class="bi bi-arrow-counterclockwise"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+<script>
+    function startEdit(id) {
+        document.getElementById('display-' + id).style.display = 'none';
+        document.getElementById('edit-' + id).classList.add('active');
+    }
+    function cancelEdit(id) {
+        document.getElementById('display-' + id).style.display = '';
+        document.getElementById('edit-' + id).classList.remove('active');
+    }
+</script>
+}

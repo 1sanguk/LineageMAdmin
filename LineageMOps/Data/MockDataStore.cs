@@ -14,6 +14,7 @@ public class MockDataStore
     public List<ServerStatus> Servers { get; private set; }
     public List<AdminLog> AdminLogs { get; private set; } = new();
     public List<Clan> Clans { get; private set; }
+    public List<GameConstraint> Constraints { get; private set; }
 
     public MockDataStore()
     {
@@ -25,6 +26,7 @@ public class MockDataStore
         Notices = SeedNotices();
         Logs = SeedLogs();
         Clans = SeedClans();
+        Constraints = SeedConstraints();
     }
 
     private static List<ServerStatus> SeedServers()
@@ -306,11 +308,62 @@ public class MockDataStore
         var allServers = GameConstants.ServerNames.ToList();
         return new List<GameEvent>
         {
-            new() { Id = 1, Title = "봄맞이 경험치 2배 이벤트",     Type = EventType.Exp,     Status = EventStatus.Active,     StartDate = now.AddDays(-5),  EndDate = now.AddDays(9),  ApplicableServers = allServers,                                    CreatedBy = "op_001", CreatedAt = now.AddDays(-10), Description = "봄을 맞이하여 모든 서버에서 경험치 2배 이벤트를 진행합니다. 이 기간 동안 획득하는 모든 경험치가 2배로 적용됩니다." },
-            new() { Id = 2, Title = "드랍률 UP! 보물 사냥 이벤트",  Type = EventType.Drop,    Status = EventStatus.Active,     StartDate = now.AddDays(-2),  EndDate = now.AddDays(5),  ApplicableServers = new List<string> { "켄라우헬", "안타라스", "발라카스" }, CreatedBy = "op_002", CreatedAt = now.AddDays(-7),  Description = "일주일간 아이템 드랍률이 1.5배로 증가합니다. 레어 아이템을 노려보세요!" },
-            new() { Id = 3, Title = "주간 로그인 보상 이벤트",      Type = EventType.Login,   Status = EventStatus.Scheduled,  StartDate = now.AddDays(3),   EndDate = now.AddDays(17), ApplicableServers = allServers,                                    CreatedBy = "op_001", CreatedAt = now.AddDays(-1),  Description = "매일 접속 시 특별 보상 아이템을 지급합니다. 7일 연속 접속 시 추가 보상!" },
-            new() { Id = 4, Title = "신년 특별 이벤트",             Type = EventType.Holiday, Status = EventStatus.Ended,      StartDate = now.AddDays(-60), EndDate = now.AddDays(-46),ApplicableServers = allServers,                                    CreatedBy = "op_003", CreatedAt = now.AddDays(-65), Description = "새해를 맞이하여 진행된 특별 이벤트입니다." },
-            new() { Id = 5, Title = "혈맹 토너먼트",                Type = EventType.Special, Status = EventStatus.Scheduled,  StartDate = now.AddDays(14),  EndDate = now.AddDays(21), ApplicableServers = new List<string> { "켄라우헬", "안타라스" },  CreatedBy = "op_001", CreatedAt = now,              Description = "서버 최강 혈맹을 가리는 토너먼트입니다. 우승 혈맹에게는 특별 칭호와 보상을 지급합니다." },
+            new() {
+                Id = 1, Title = "봄맞이 경험치 2배 이벤트", Type = EventType.Exp, Status = EventStatus.Active,
+                StartDate = now.AddDays(-5), EndDate = now.AddDays(9), ApplicableServers = allServers,
+                CreatedBy = "op_001", CreatedAt = now.AddDays(-10),
+                Description = "봄을 맞이하여 모든 서버에서 경험치 2배 이벤트를 진행합니다.",
+                Rewards =
+                [
+                    new() { Id = 1, Type = RewardType.ExpBonus,  Trigger = RewardTrigger.OnLogin,    Amount = 100, ConditionDescription = "이벤트 기간 중 접속 시 경험치 +100% 자동 적용" },
+                    new() { Id = 2, Type = RewardType.Adena,     Trigger = RewardTrigger.DailyLogin, Amount = 50000, ConditionDescription = "매일 첫 로그인 시 아데나 지급" },
+                ]
+            },
+            new() {
+                Id = 2, Title = "드랍률 UP! 보물 사냥 이벤트", Type = EventType.Drop, Status = EventStatus.Active,
+                StartDate = now.AddDays(-2), EndDate = now.AddDays(5), ApplicableServers = new List<string> { "켄라우헬", "안타라스", "발라카스" },
+                CreatedBy = "op_002", CreatedAt = now.AddDays(-7),
+                Description = "일주일간 아이템 드랍률이 1.5배로 증가합니다. 레어 아이템을 노려보세요!",
+                Rewards =
+                [
+                    new() { Id = 3, Type = RewardType.DropBonus, Trigger = RewardTrigger.Kill,       Amount = 50, ConditionDescription = "몬스터 처치 시 드랍률 +50% 자동 적용" },
+                ]
+            },
+            new() {
+                Id = 3, Title = "주간 로그인 보상 이벤트", Type = EventType.Login, Status = EventStatus.Scheduled,
+                StartDate = now.AddDays(3), EndDate = now.AddDays(17), ApplicableServers = allServers,
+                CreatedBy = "op_001", CreatedAt = now.AddDays(-1),
+                Description = "매일 접속 시 특별 보상 아이템을 지급합니다. 7일 연속 접속 시 추가 보상!",
+                Rewards =
+                [
+                    new() { Id = 4, Type = RewardType.Item,     Trigger = RewardTrigger.DailyLogin,  Amount = 1,  ItemName = "봄의 축복 상자",    ConditionDescription = "매일 첫 로그인 시 1개 지급" },
+                    new() { Id = 5, Type = RewardType.Item,     Trigger = RewardTrigger.OnCondition, Amount = 1,  ItemName = "황금 보물 상자",     ConditionDescription = "7일 연속 로그인 달성 시 지급" },
+                    new() { Id = 6, Type = RewardType.Diamond,  Trigger = RewardTrigger.OnCondition, Amount = 300, ConditionDescription = "14일 연속 로그인 달성 시 다이아 300개 지급" },
+                ]
+            },
+            new() {
+                Id = 4, Title = "신년 특별 이벤트", Type = EventType.Holiday, Status = EventStatus.Ended,
+                StartDate = now.AddDays(-60), EndDate = now.AddDays(-46), ApplicableServers = allServers,
+                CreatedBy = "op_003", CreatedAt = now.AddDays(-65),
+                Description = "새해를 맞이하여 진행된 특별 이벤트입니다.",
+                Rewards =
+                [
+                    new() { Id = 7, Type = RewardType.Item,  Trigger = RewardTrigger.EventStart, Amount = 1, ItemName = "신년 선물 상자", ConditionDescription = "이벤트 시작 시 전 서버 유저에게 일괄 지급" },
+                    new() { Id = 8, Type = RewardType.Adena, Trigger = RewardTrigger.EventEnd,   Amount = 100000, ConditionDescription = "이벤트 종료 시 전 서버 유저에게 일괄 지급" },
+                ]
+            },
+            new() {
+                Id = 5, Title = "혈맹 토너먼트", Type = EventType.Special, Status = EventStatus.Scheduled,
+                StartDate = now.AddDays(14), EndDate = now.AddDays(21), ApplicableServers = new List<string> { "켄라우헬", "안타라스" },
+                CreatedBy = "op_001", CreatedAt = now,
+                Description = "서버 최강 혈맹을 가리는 토너먼트입니다. 우승 혈맹에게는 특별 칭호와 보상을 지급합니다.",
+                Rewards =
+                [
+                    new() { Id = 9,  Type = RewardType.Item,    Trigger = RewardTrigger.EventEnd,   Amount = 1,  ItemName = "챔피언의 증표",  ConditionDescription = "우승 혈맹 전원 지급", TargetMinLevel = 40 },
+                    new() { Id = 10, Type = RewardType.Diamond, Trigger = RewardTrigger.EventEnd,   Amount = 1000, ConditionDescription = "우승 혈맹 군주 지급", TargetMinLevel = 40 },
+                    new() { Id = 11, Type = RewardType.Item,    Trigger = RewardTrigger.EventEnd,   Amount = 1,  ItemName = "준우승 트로피",  ConditionDescription = "준우승 혈맹 전원 지급", TargetMinLevel = 40 },
+                ]
+            },
         };
     }
 
@@ -593,5 +646,43 @@ public class MockDataStore
             "야간 사냥 위주 활동. 오전 2시~6시 주 활동 시간.\n소규모 정예 혈맹, 정예 이상 승격 가능.",
             "🌙",
             [], []),
+    ];
+
+    private static List<GameConstraint> SeedConstraints() =>
+    [
+        // ── 보스 ──────────────────────────────────────────────────────────
+        new() { Id =  1, Category = ConstraintCategory.Boss,    ValueType = ConstraintValueType.Int,   Key = "BOSS_RESPAWN_TIME_NORMAL",   DisplayName = "일반 보스 리젠 시간",     Description = "일반 보스가 처치된 후 재소환까지 걸리는 시간",      DefaultValue = "480",  Value = "480",  Min = 60,   Max = 2880, Unit = "분" },
+        new() { Id =  2, Category = ConstraintCategory.Boss,    ValueType = ConstraintValueType.Int,   Key = "BOSS_RESPAWN_TIME_RAID",     DisplayName = "레이드 보스 리젠 시간",   Description = "레이드 보스가 처치된 후 재소환까지 걸리는 시간",    DefaultValue = "1440", Value = "1440", Min = 60,   Max = 10080, Unit = "분" },
+        new() { Id =  3, Category = ConstraintCategory.Boss,    ValueType = ConstraintValueType.Float, Key = "BOSS_HP_MULTIPLIER",         DisplayName = "보스 HP 배율",            Description = "모든 보스의 최대 HP에 곱해지는 배율",               DefaultValue = "1.0",  Value = "1.0",  Min = 0.1,  Max = 10.0, Unit = "배" },
+        new() { Id =  4, Category = ConstraintCategory.Boss,    ValueType = ConstraintValueType.Float, Key = "BOSS_DROP_RATE_MULTIPLIER",  DisplayName = "보스 드랍률 배율",        Description = "보스 처치 시 아이템 드랍 확률에 곱해지는 배율",      DefaultValue = "1.0",  Value = "1.0",  Min = 0.1,  Max = 5.0,  Unit = "배" },
+        new() { Id =  5, Category = ConstraintCategory.Boss,    ValueType = ConstraintValueType.Float, Key = "BOSS_EXP_MULTIPLIER",        DisplayName = "보스 경험치 배율",        Description = "보스 처치 시 획득 경험치에 곱해지는 배율",           DefaultValue = "1.0",  Value = "1.0",  Min = 0.1,  Max = 5.0,  Unit = "배" },
+
+        // ── 몹 ────────────────────────────────────────────────────────────
+        new() { Id =  6, Category = ConstraintCategory.Mob,     ValueType = ConstraintValueType.Int,   Key = "MOB_RESPAWN_TIME",           DisplayName = "일반 몹 리젠 시간",       Description = "일반 몹이 처치된 후 재소환까지 걸리는 시간",         DefaultValue = "30",   Value = "30",   Min = 5,    Max = 300,  Unit = "초" },
+        new() { Id =  7, Category = ConstraintCategory.Mob,     ValueType = ConstraintValueType.Float, Key = "MOB_EXP_MULTIPLIER",         DisplayName = "몹 경험치 배율",          Description = "몹 처치 시 획득 경험치에 곱해지는 배율",             DefaultValue = "1.0",  Value = "1.0",  Min = 0.1,  Max = 5.0,  Unit = "배" },
+        new() { Id =  8, Category = ConstraintCategory.Mob,     ValueType = ConstraintValueType.Float, Key = "MOB_DROP_RATE",              DisplayName = "몹 드랍률 배율",          Description = "몹 처치 시 아이템 드랍 확률에 곱해지는 배율",        DefaultValue = "1.0",  Value = "1.0",  Min = 0.1,  Max = 5.0,  Unit = "배" },
+        new() { Id =  9, Category = ConstraintCategory.Mob,     ValueType = ConstraintValueType.Int,   Key = "MOB_MAX_DENSITY",            DisplayName = "최대 몹 밀도",            Description = "기본값 대비 서버에 활성화할 몹의 최대 밀도 비율",    DefaultValue = "100",  Value = "100",  Min = 10,   Max = 200,  Unit = "%" },
+
+        // ── 경제 ──────────────────────────────────────────────────────────
+        new() { Id = 10, Category = ConstraintCategory.Economy,  ValueType = ConstraintValueType.Float, Key = "ADENA_DROP_RATE",            DisplayName = "아데나 드랍률 배율",      Description = "몹/보스 처치 시 획득 아데나 양에 곱해지는 배율",     DefaultValue = "1.0",  Value = "1.0",  Min = 0.1,  Max = 10.0, Unit = "배" },
+        new() { Id = 11, Category = ConstraintCategory.Economy,  ValueType = ConstraintValueType.Float, Key = "ITEM_DROP_RATE",             DisplayName = "아이템 드랍률 배율",      Description = "전체 아이템 드랍 확률에 곱해지는 배율",              DefaultValue = "1.0",  Value = "1.0",  Min = 0.1,  Max = 5.0,  Unit = "배" },
+        new() { Id = 12, Category = ConstraintCategory.Economy,  ValueType = ConstraintValueType.Float, Key = "SHOP_PRICE_RATE",            DisplayName = "상점 가격 배율",          Description = "NPC 상점의 구매/판매 가격에 곱해지는 배율",          DefaultValue = "1.0",  Value = "1.0",  Min = 0.5,  Max = 2.0,  Unit = "배" },
+        new() { Id = 13, Category = ConstraintCategory.Economy,  ValueType = ConstraintValueType.Float, Key = "TRADE_TAX_RATE",             DisplayName = "거래소 세율",             Description = "거래소에서 아이템 판매 시 부과되는 세금 비율",        DefaultValue = "5.0",  Value = "5.0",  Min = 0.0,  Max = 30.0, Unit = "%" },
+        new() { Id = 14, Category = ConstraintCategory.Economy,  ValueType = ConstraintValueType.Float, Key = "ENCHANT_SUCCESS_RATE",       DisplayName = "강화 성공률 배율",        Description = "아이템 강화 성공 확률에 곱해지는 배율",              DefaultValue = "1.0",  Value = "1.0",  Min = 0.1,  Max = 3.0,  Unit = "배" },
+
+        // ── PvP ───────────────────────────────────────────────────────────
+        new() { Id = 15, Category = ConstraintCategory.PvP,      ValueType = ConstraintValueType.Float, Key = "PK_PENALTY_EXP_RATE",        DisplayName = "PK 경험치 패널티율",      Description = "PK 상태에서 사망 시 경험치 감소 비율",               DefaultValue = "100.0",Value = "100.0",Min = 0.0,  Max = 100.0,Unit = "%" },
+        new() { Id = 16, Category = ConstraintCategory.PvP,      ValueType = ConstraintValueType.Float, Key = "PK_PENALTY_DROP_RATE",       DisplayName = "PK 아이템 드랍 확률",    Description = "PK 상태에서 사망 시 아이템 드랍 확률",               DefaultValue = "30.0", Value = "30.0", Min = 0.0,  Max = 100.0,Unit = "%" },
+        new() { Id = 17, Category = ConstraintCategory.PvP,      ValueType = ConstraintValueType.Int,   Key = "PK_PENALTY_DURATION",        DisplayName = "PK 패널티 지속시간",      Description = "PK 카운트 감소까지 걸리는 시간",                     DefaultValue = "300",  Value = "300",  Min = 0,    Max = 3600, Unit = "초" },
+
+        // ── 서버 ──────────────────────────────────────────────────────────
+        new() { Id = 18, Category = ConstraintCategory.Server,   ValueType = ConstraintValueType.Int,   Key = "MAX_CONNECTION",             DisplayName = "서버 최대 접속자 수",     Description = "서버당 동시 접속 가능한 최대 유저 수",               DefaultValue = "8000", Value = "8000", Min = 100,  Max = 20000,Unit = "명" },
+        new() { Id = 19, Category = ConstraintCategory.Server,   ValueType = ConstraintValueType.Bool,  Key = "MAINTENANCE_MODE",           DisplayName = "점검 모드",               Description = "활성화 시 일반 유저 접속이 차단됨",                  DefaultValue = "false",Value = "false" },
+        new() { Id = 20, Category = ConstraintCategory.Server,   ValueType = ConstraintValueType.Float, Key = "SERVER_EXP_BONUS",           DisplayName = "서버 경험치 보너스",      Description = "전체 서버에 적용되는 경험치 추가 획득 비율",         DefaultValue = "0.0",  Value = "0.0",  Min = 0.0,  Max = 500.0,Unit = "%" },
+
+        // ── 버프 ──────────────────────────────────────────────────────────
+        new() { Id = 21, Category = ConstraintCategory.Buff,     ValueType = ConstraintValueType.Bool,  Key = "LOGIN_BONUS_ENABLED",        DisplayName = "로그인 보너스 활성화",    Description = "매일 첫 접속 시 보상을 지급하는 로그인 보너스 활성화",DefaultValue = "true", Value = "true" },
+        new() { Id = 22, Category = ConstraintCategory.Buff,     ValueType = ConstraintValueType.Float, Key = "EVENT_EXP_BONUS",            DisplayName = "이벤트 경험치 보너스",    Description = "이벤트 기간 중 경험치 추가 획득 비율",               DefaultValue = "0.0",  Value = "0.0",  Min = 0.0,  Max = 500.0,Unit = "%" },
+        new() { Id = 23, Category = ConstraintCategory.Buff,     ValueType = ConstraintValueType.Float, Key = "EVENT_DROP_BONUS",           DisplayName = "이벤트 드랍 보너스",      Description = "이벤트 기간 중 아이템 드랍 확률 추가 보너스",        DefaultValue = "0.0",  Value = "0.0",  Min = 0.0,  Max = 200.0,Unit = "%" },
     ];
 }

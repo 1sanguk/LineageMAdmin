@@ -1,29 +1,67 @@
+@using LineageMOps.Models.Domain
 @model LineageMOps.Models.Domain.GameEvent
 @{
     ViewData["Title"] = Model.Id == 0 ? "이벤트 추가" : "이벤트 수정";
     string[] allServers = ViewBag.AllServers;
+
+    static string RewardTypeLabel(RewardType t) => t switch
+    {
+        RewardType.Adena     => "아데나",
+        RewardType.Diamond   => "다이아",
+        RewardType.Exp       => "경험치",
+        RewardType.ExpBonus  => "경험치 배율",
+        RewardType.DropBonus => "드랍률 배율",
+        RewardType.Item      => "아이템",
+        _                   => t.ToString()
+    };
+
+    static string TriggerLabel(RewardTrigger t) => t switch
+    {
+        RewardTrigger.DailyLogin    => "매일 첫 로그인",
+        RewardTrigger.OnLogin       => "접속 시마다",
+        RewardTrigger.EventStart    => "이벤트 시작 시",
+        RewardTrigger.EventEnd      => "이벤트 종료 시",
+        RewardTrigger.QuestComplete => "퀘스트 완료 시",
+        RewardTrigger.Kill          => "몬스터 처치 시",
+        RewardTrigger.LevelUp       => "레벨업 시",
+        RewardTrigger.OnCondition   => "조건 달성 시",
+        _                          => t.ToString()
+    };
+
+    static string AmountUnit(RewardType t) => t switch
+    {
+        RewardType.ExpBonus  => "%",
+        RewardType.DropBonus => "%",
+        _                   => "개"
+    };
 }
 
+<style>
+    .reward-row td { vertical-align: middle; font-size: 0.85rem; }
+    .reward-row input, .reward-row select { font-size: 0.83rem; padding: 3px 7px; }
+</style>
+
 <div class="row justify-content-center">
-    <div class="col-md-8">
+    <div class="col-md-10">
         <div class="mb-3">
             <a href="/Event" class="btn btn-sm btn-outline-secondary">
                 <i class="bi bi-arrow-left me-1"></i>목록으로
             </a>
         </div>
 
-        <div class="card">
-            <div class="card-header">
-                <i class="bi bi-calendar-event me-2"></i>
-                @(Model.Id == 0 ? "신규 이벤트 추가" : "이벤트 수정")
-            </div>
-            <div class="card-body">
-                <form method="post" action="/Event/EditEvent">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="Id" value="@Model.Id" />
-                    <input type="hidden" name="CreatedBy" value="@Model.CreatedBy" />
-                    <input type="hidden" name="CreatedAt" value="@Model.CreatedAt.ToString("o")" />
+        <form method="post" action="/Event/EditEvent" id="eventForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="Id" value="@Model.Id" />
+            <input type="hidden" name="CreatedBy" value="@Model.CreatedBy" />
+            <input type="hidden" name="CreatedAt" value="@Model.CreatedAt.ToString("o")" />
 
+            @* ── 카드 1: 이벤트 기본 정보 ── *@
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-calendar-event me-2"></i>
+                    @(Model.Id == 0 ? "신규 이벤트 추가" : "이벤트 수정")
+                </div>
+                <div class="card-body">
                     <div class="mb-3">
                         <label class="form-label fw-semibold">이벤트 제목 <span class="text-danger">*</span></label>
                         <input type="text" name="Title" value="@Model.Title" class="form-control" required placeholder="이벤트 제목을 입력하세요" />
@@ -33,16 +71,16 @@
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">이벤트 유형</label>
                             <select name="Type" class="form-select">
-                                @foreach (LineageMOps.Models.Domain.EventType t in Enum.GetValues(typeof(LineageMOps.Models.Domain.EventType)))
+                                @foreach (EventType t in Enum.GetValues(typeof(EventType)))
                                 {
                                     var label = t switch
                                     {
-                                        LineageMOps.Models.Domain.EventType.Exp => "경험치",
-                                        LineageMOps.Models.Domain.EventType.Drop => "드랍률",
-                                        LineageMOps.Models.Domain.EventType.Login => "로그인",
-                                        LineageMOps.Models.Domain.EventType.Special => "특별",
-                                        LineageMOps.Models.Domain.EventType.Holiday => "휴일",
-                                        _ => t.ToString()
+                                        EventType.Exp     => "경험치",
+                                        EventType.Drop    => "드랍률",
+                                        EventType.Login   => "로그인",
+                                        EventType.Special => "특별",
+                                        EventType.Holiday => "휴일",
+                                        _                => t.ToString()
                                     };
                                     <option value="@t" selected="@(Model.Type == t ? "selected" : null)">@label</option>
                                 }
@@ -51,15 +89,15 @@
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">상태</label>
                             <select name="Status" class="form-select">
-                                @foreach (LineageMOps.Models.Domain.EventStatus s in Enum.GetValues(typeof(LineageMOps.Models.Domain.EventStatus)))
+                                @foreach (EventStatus s in Enum.GetValues(typeof(EventStatus)))
                                 {
                                     var label = s switch
                                     {
-                                        LineageMOps.Models.Domain.EventStatus.Active => "진행중",
-                                        LineageMOps.Models.Domain.EventStatus.Scheduled => "예정",
-                                        LineageMOps.Models.Domain.EventStatus.Ended => "종료",
-                                        LineageMOps.Models.Domain.EventStatus.Cancelled => "취소",
-                                        _ => s.ToString()
+                                        EventStatus.Active    => "진행중",
+                                        EventStatus.Scheduled => "예정",
+                                        EventStatus.Ended     => "종료",
+                                        EventStatus.Cancelled => "취소",
+                                        _                    => s.ToString()
                                     };
                                     <option value="@s" selected="@(Model.Status == s ? "selected" : null)">@label</option>
                                 }
@@ -82,8 +120,7 @@
                         <label class="form-label fw-semibold">적용 서버</label>
                         <div class="d-flex flex-wrap gap-2">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="chkAllServers"
-                                       onchange="toggleAllServers(this)" />
+                                <input class="form-check-input" type="checkbox" id="chkAllServers" onchange="toggleAllServers(this)" />
                                 <label class="form-check-label fw-semibold" for="chkAllServers">전체 선택</label>
                             </div>
                             @foreach (var s in allServers)
@@ -98,35 +135,206 @@
                         </div>
                     </div>
 
-                    <div class="mb-4">
+                    <div>
                         <label class="form-label fw-semibold">이벤트 설명</label>
-                        <textarea name="Description" class="form-control" rows="5" placeholder="이벤트 상세 내용을 입력하세요">@Model.Description</textarea>
+                        <textarea name="Description" class="form-control" rows="4" placeholder="이벤트 상세 내용을 입력하세요">@Model.Description</textarea>
                     </div>
-
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary px-4">
-                            <i class="bi bi-save me-1"></i>저장
-                        </button>
-                        <a href="/Event" class="btn btn-outline-secondary">취소</a>
-                    </div>
-                </form>
+                </div>
             </div>
-        </div>
+
+            @* ── 카드 2: 보상 설정 ── *@
+            <div class="card mb-4">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <span><i class="bi bi-gift-fill me-2" style="color:#f59e0b;"></i>보상 설정</span>
+                    <button type="button" class="btn btn-sm btn-warning" onclick="addReward()">
+                        <i class="bi bi-plus-circle me-1"></i>보상 추가
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table mb-0" id="rewards-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3" style="width:120px;">보상 유형</th>
+                                    <th style="width:140px;">지급 시점</th>
+                                    <th style="width:130px;">아이템명</th>
+                                    <th style="width:110px;">수량/수치</th>
+                                    <th style="width:80px;">최소 레벨</th>
+                                    <th style="width:80px;">최대 레벨</th>
+                                    <th>조건 설명</th>
+                                    <th style="width:40px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="rewards-body">
+                                @for (int i = 0; i < Model.Rewards.Count; i++)
+                                {
+                                    var r = Model.Rewards[i];
+                                    <tr class="reward-row">
+                                        <td class="ps-3">
+                                            <input type="hidden" name="Rewards[@i].Id" value="@r.Id" />
+                                            <select name="Rewards[@i].Type" class="form-select form-select-sm reward-type-sel" onchange="onTypeChange(this)">
+                                                @foreach (RewardType rt in Enum.GetValues(typeof(RewardType)))
+                                                {
+                                                    <option value="@rt" selected="@(r.Type == rt ? "selected" : null)">@RewardTypeLabel(rt)</option>
+                                                }
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select name="Rewards[@i].Trigger" class="form-select form-select-sm">
+                                                @foreach (RewardTrigger rt in Enum.GetValues(typeof(RewardTrigger)))
+                                                {
+                                                    <option value="@rt" selected="@(r.Trigger == rt ? "selected" : null)">@TriggerLabel(rt)</option>
+                                                }
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <input type="text" name="Rewards[@i].ItemName" value="@r.ItemName"
+                                                   class="form-control form-control-sm item-name-input"
+                                                   placeholder="아이템명"
+                                                   style="@(r.Type == RewardType.Item ? "" : "display:none;")" />
+                                            <span class="text-muted item-name-dash" style="font-size:0.8rem;@(r.Type == RewardType.Item ? "display:none;" : "")">—</span>
+                                        </td>
+                                        <td>
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" name="Rewards[@i].Amount" value="@r.Amount" class="form-control form-control-sm" min="0" />
+                                                <span class="input-group-text amount-unit">@AmountUnit(r.Type)</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <input type="number" name="Rewards[@i].TargetMinLevel" value="@r.TargetMinLevel" class="form-control form-control-sm" min="1" max="90" placeholder="—" />
+                                        </td>
+                                        <td>
+                                            <input type="number" name="Rewards[@i].TargetMaxLevel" value="@r.TargetMaxLevel" class="form-control form-control-sm" min="1" max="90" placeholder="—" />
+                                        </td>
+                                        <td>
+                                            <input type="text" name="Rewards[@i].ConditionDescription" value="@r.ConditionDescription" class="form-control form-control-sm" placeholder="지급 조건 또는 설명" />
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeReward(this)" title="삭제">
+                                                <i class="bi bi-trash3"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        <div id="rewards-empty" class="text-center text-muted py-4" style="font-size:0.85rem;@(Model.Rewards.Count > 0 ? "display:none;" : "")">
+                            <i class="bi bi-gift me-1"></i>등록된 보상이 없습니다. <strong>보상 추가</strong> 버튼을 눌러 추가하세요.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-save me-1"></i>저장
+                </button>
+                <a href="/Event" class="btn btn-outline-secondary">취소</a>
+            </div>
+        </form>
     </div>
 </div>
+
+<template id="reward-template">
+    <tr class="reward-row">
+        <td class="ps-3">
+            <input type="hidden" name="Rewards[INDEX].Id" value="0" />
+            <select name="Rewards[INDEX].Type" class="form-select form-select-sm reward-type-sel" onchange="onTypeChange(this)">
+                <option value="Adena">아데나</option>
+                <option value="Diamond">다이아</option>
+                <option value="Exp">경험치</option>
+                <option value="ExpBonus">경험치 배율</option>
+                <option value="DropBonus">드랍률 배율</option>
+                <option value="Item">아이템</option>
+            </select>
+        </td>
+        <td>
+            <select name="Rewards[INDEX].Trigger" class="form-select form-select-sm">
+                <option value="DailyLogin">매일 첫 로그인</option>
+                <option value="OnLogin">접속 시마다</option>
+                <option value="EventStart">이벤트 시작 시</option>
+                <option value="EventEnd">이벤트 종료 시</option>
+                <option value="QuestComplete">퀘스트 완료 시</option>
+                <option value="Kill">몬스터 처치 시</option>
+                <option value="LevelUp">레벨업 시</option>
+                <option value="OnCondition">조건 달성 시</option>
+            </select>
+        </td>
+        <td>
+            <input type="text" name="Rewards[INDEX].ItemName" class="form-control form-control-sm item-name-input" placeholder="아이템명" style="display:none;" />
+            <span class="text-muted item-name-dash" style="font-size:0.8rem;">—</span>
+        </td>
+        <td>
+            <div class="input-group input-group-sm">
+                <input type="number" name="Rewards[INDEX].Amount" value="1" class="form-control form-control-sm" min="0" />
+                <span class="input-group-text amount-unit">개</span>
+            </div>
+        </td>
+        <td>
+            <input type="number" name="Rewards[INDEX].TargetMinLevel" class="form-control form-control-sm" min="1" max="90" placeholder="—" />
+        </td>
+        <td>
+            <input type="number" name="Rewards[INDEX].TargetMaxLevel" class="form-control form-control-sm" min="1" max="90" placeholder="—" />
+        </td>
+        <td>
+            <input type="text" name="Rewards[INDEX].ConditionDescription" class="form-control form-control-sm" placeholder="지급 조건 또는 설명" />
+        </td>
+        <td>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeReward(this)" title="삭제">
+                <i class="bi bi-trash3"></i>
+            </button>
+        </td>
+    </tr>
+</template>
 
 @section Scripts {
 <script>
     function toggleAllServers(cb) {
         document.querySelectorAll('.server-check').forEach(c => c.checked = cb.checked);
     }
-    // Sync "all" checkbox state
     function syncAll() {
         var checks = document.querySelectorAll('.server-check');
-        var all = Array.from(checks).every(c => c.checked);
-        document.getElementById('chkAllServers').checked = all;
+        document.getElementById('chkAllServers').checked = Array.from(checks).every(c => c.checked);
     }
     document.querySelectorAll('.server-check').forEach(c => c.addEventListener('change', syncAll));
     syncAll();
+
+    var rewardCount = @(Model.Rewards.Count);
+
+    function addReward() {
+        var html = document.getElementById('reward-template').innerHTML.replace(/INDEX/g, rewardCount);
+        document.getElementById('rewards-body').insertAdjacentHTML('beforeend', html);
+        rewardCount++;
+        updateEmptyState();
+    }
+
+    function removeReward(btn) {
+        btn.closest('tr').remove();
+        reindexRewards();
+        updateEmptyState();
+    }
+
+    function reindexRewards() {
+        document.querySelectorAll('#rewards-body tr').forEach(function(row, i) {
+            row.querySelectorAll('[name]').forEach(function(el) {
+                el.name = el.name.replace(/Rewards\[\d+\]/, 'Rewards[' + i + ']');
+            });
+        });
+        rewardCount = document.querySelectorAll('#rewards-body tr').length;
+    }
+
+    function updateEmptyState() {
+        var hasRows = document.querySelectorAll('#rewards-body tr').length > 0;
+        document.getElementById('rewards-empty').style.display = hasRows ? 'none' : '';
+    }
+
+    function onTypeChange(sel) {
+        var row = sel.closest('tr');
+        var isItem    = sel.value === 'Item';
+        var isPercent = sel.value === 'ExpBonus' || sel.value === 'DropBonus';
+        row.querySelector('.item-name-input').style.display = isItem ? '' : 'none';
+        row.querySelector('.item-name-dash').style.display  = isItem ? 'none' : '';
+        row.querySelector('.amount-unit').textContent = isPercent ? '%' : '개';
+    }
 </script>
 }
